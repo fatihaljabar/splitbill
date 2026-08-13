@@ -1723,6 +1723,9 @@ export async function runOcr(
   onProgress?.('recognizing', 0.08);
 
   const worker = await Tesseract.createWorker('ind+eng', 1, {
+    workerPath: '/tesseract/worker.min.js',
+    corePath: '/tesseract/',
+    langPath: '/tesseract/lang',
     logger: (m: { status?: string; progress?: number }) => {
       if (m.status === 'recognizing text' && typeof m.progress === 'number') {
         onProgress?.('recognizing', 0.1 + m.progress * 0.75);

@@ -22,7 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-.vite-source-tags.js
 .vercel
 
 # Claude Code
