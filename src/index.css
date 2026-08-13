@@ -1,0 +1,251 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+@custom-variant landscape (@media (orientation: landscape));
+@custom-variant portrait (@media (orientation: portrait));
+
+@theme {
+  --font-sans: 'Poppins', ui-sans-serif, system-ui, sans-serif;
+  --breakpoint-xs: 380px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+body {
+  margin: 0;
+  width: 100%;
+  max-width: 100%;
+  min-height: 100dvh;
+  min-height: 100svh;
+  overflow-x: hidden;
+  position: relative;
+}
+
+#root {
+  width: 100%;
+  max-width: 100%;
+  min-height: 100dvh;
+  min-height: 100svh;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Safe area for notched phones */
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --app-pad-x: max(1rem, var(--safe-left), var(--safe-right));
+  --sticky-offset: calc(0.75rem + var(--safe-bottom));
+  --header-h: 3rem;
+}
+
+@media (min-width: 640px) {
+  :root {
+    --header-h: 3.5rem;
+  }
+}
+
+@media (min-width: 768px) {
+  :root {
+    --app-pad-x: 1.5rem;
+    --header-h: 4rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --app-pad-x: 2rem;
+  }
+}
+
+@media (max-width: 379px) {
+  :root {
+    --app-pad-x: max(0.75rem, var(--safe-left), var(--safe-right));
+  }
+}
+
+@media (orientation: landscape) and (max-height: 500px) {
+  :root {
+    --sticky-offset: calc(0.5rem + var(--safe-bottom));
+  }
+}
+
+button {
+  font-family: inherit;
+  touch-action: manipulation;
+}
+
+input,
+textarea,
+select {
+  font-family: inherit;
+  touch-action: manipulation;
+}
+
+/* iOS zoom-safe form controls without explicit text size utility */
+input:not([class*='text-']),
+textarea:not([class*='text-']),
+select:not([class*='text-']) {
+  font-size: 16px;
+}
+
+@media (min-width: 640px) {
+  input:not([class*='text-']),
+  textarea:not([class*='text-']),
+  select:not([class*='text-']) {
+    font-size: 0.875rem;
+  }
+}
+
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+  opacity: 0.4;
+}
+
+::selection {
+  background: #e7e5e4;
+  color: #171717;
+}
+
+.dark ::selection {
+  background: #404040;
+  color: #fafafa;
+}
+
+/* Vertical scrollbar only — avoid horizontal bar flash */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 0;
+}
+::-webkit-scrollbar-thumb {
+  background: #d4d4d4;
+  border-radius: 99px;
+}
+.dark ::-webkit-scrollbar-thumb {
+  background: #404040;
+}
+
+/* Shared compact action chips */
+.action-chip {
+  display: inline-flex;
+  height: 2rem;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.25rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgb(229 229 229);
+  background: #fff;
+  padding: 0 0.625rem;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
+  color: rgb(38 38 38);
+}
+.dark .action-chip {
+  border-color: rgb(64 64 64);
+  background: rgb(23 23 23);
+  color: rgb(245 245 245);
+}
+
+/* Centered content column — never wider than viewport */
+.app-shell {
+  width: 100%;
+  max-width: min(42rem, 100%);
+  margin-inline: auto;
+  padding-inline: var(--app-pad-x);
+  box-sizing: border-box;
+}
+
+@media (min-width: 1024px) {
+  .app-shell {
+    max-width: min(56rem, 100%);
+  }
+}
+
+@media (min-width: 1280px) {
+  .app-shell {
+    max-width: min(64rem, 100%);
+  }
+}
+
+/* Fixed bottom bars: only safe-area bottom, horizontal via app-shell */
+.sticky-bar {
+  padding-bottom: var(--sticky-offset);
+}
+
+/* Horizontal chip rows stay inside parent */
+.scroll-x-soft {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+}
+.scroll-x-soft::-webkit-scrollbar {
+  display: none;
+  height: 0;
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Page roots: no horizontal bleed */
+.page-root {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+/* Desktop: fit short pages in one viewport when content is small */
+@media (min-width: 1024px) {
+  .page-fit-desktop {
+    min-height: calc(100dvh - var(--header-h) - 2.5rem);
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 500px) {
+  .camera-stage {
+    max-height: calc(100dvh - 5rem);
+  }
+  .camera-stage video {
+    aspect-ratio: 16 / 9 !important;
+    max-height: calc(100dvh - 5.5rem);
+  }
+}
+
+/* Fixed full-bleed footers stay within viewport */
+.fixed-footer {
+  left: 0;
+  right: 0;
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
+}
