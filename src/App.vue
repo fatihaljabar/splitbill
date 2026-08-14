@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import Toast from './components/ui/Toast.vue';
 import { useApp } from './composables/useApp.ts';
 
 const { state, setLang, setTheme, tr } = useApp();
@@ -18,5 +19,6 @@ const { state, setLang, setTheme, tr } = useApp();
       <span>{{ tr('appName') }}</span>
     </div>
     <router-view />
+    <Toast />
   </div>
 </template>
