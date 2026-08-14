@@ -8,7 +8,7 @@
     "dev:server": "node --watch --env-file-if-exists=.env server/index.ts",
     "prebuild": "node scripts/copy-tesseract.mjs",
     "build": "tsc -b && tsc -p tsconfig.server.json && vite build",
-    "start": "node server/index.ts",
+    "start": "node dist-server/server/index.js",
     "preview": "vite preview",
     "lint": "biome check .",
     "format": "biome check --write ."
