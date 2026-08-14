@@ -4,104 +4,154 @@ import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { calculateBill } from '../../shared/calculate.ts';
 import { formatCurrency, formatDate } from '../../shared/format.ts';
-import type { Bill } from '../../shared/types.ts';
+import type { BankAccount, CalculationResult, PersonBreakdown } from '../../shared/types.ts';
 import CountdownBadge from '../components/CountdownBadge.vue';
 import Button from '../components/ui/Button.vue';
 import { useApp } from '../composables/useApp';
-import { setParticipantPaid, syncPaymentsFromBill } from '../lib/payments.ts';
+import { markPaid as apiMarkPaid, fetchBill } from '../lib/api.ts';
 import { decodeBill } from '../lib/share.ts';
-import { loadBillIncludingExpired, saveBill } from '../lib/storage.ts';
+
+interface DisplayInfo {
+  eventName: string;
+  storeName?: string;
+  date?: string;
+  createdAt?: number;
+  expiresAt: number;
+  bankAccount: BankAccount;
+}
 
 const route = useRoute();
 const router = useRouter();
 const { tr, toast } = useApp();
 
-const bill = ref<Bill | null>(null);
+const code = route.params.code as string;
+const loading = ref(true);
 const expired = ref(false);
 const notFound = ref(false);
+const isPrivate = ref(false);
+const display = ref<DisplayInfo | null>(null);
+const participants = ref<Array<{ id: string; name: string }>>([]);
+// calc/perPerson tersedia utuh untuk bill publik (dan link lama) — server kirim semuanya
+// sekaligus. Bill privat sengaja tidak pernah punya ini (TSD §7): baru terisi per-orang
+// lewat `me` setelah peserta memilih namanya.
+const calc = ref<CalculationResult | null>(null);
+const me = ref<PersonBreakdown | null>(null);
 const selectedId = ref<string | null>(null);
 
-onMounted(() => {
-  const code = route.params.code as string | undefined;
+onMounted(async () => {
   if (!code) {
     notFound.value = true;
+    loading.value = false;
     return;
   }
 
+  // Link lama (data bill dititipkan di URL) — dibaca langsung di klien, tanpa server.
   const dataParam = route.query.d as string | undefined;
-  let b: Bill | null = null;
-  let exp = false;
-
   if (dataParam) {
     const decoded = decodeBill(dataParam);
     if (decoded) {
-      b = decoded;
-      exp = Date.now() > decoded.expiresAt;
-      if (!exp) {
-        try {
-          const merged = syncPaymentsFromBill(decoded);
-          saveBill(merged);
-          b = merged;
-        } catch {
-          try {
-            saveBill(decoded);
-          } catch {
-            /* quota */
-          }
-        }
+      if (Date.now() > decoded.expiresAt) {
+        expired.value = true;
+        display.value = {
+          eventName: decoded.eventName,
+          createdAt: decoded.createdAt,
+          expiresAt: decoded.expiresAt,
+          bankAccount: decoded.bankAccount,
+        };
+        loading.value = false;
+        return;
       }
+      isPrivate.value = decoded.privacyMode === 'private';
+      display.value = {
+        eventName: decoded.eventName,
+        storeName: decoded.storeName,
+        date: decoded.date,
+        expiresAt: decoded.expiresAt,
+        bankAccount: decoded.bankAccount,
+      };
+      participants.value = decoded.participants.map((p) => ({ id: p.id, name: p.name }));
+      calc.value = calculateBill(decoded);
+      restoreSelection();
+      loading.value = false;
+      return;
     }
   }
 
-  if (!b) {
-    const local = loadBillIncludingExpired(code);
-    b = local.bill;
-    exp = local.expired;
-    if (b && !exp) {
-      b = syncPaymentsFromBill(b);
-      saveBill(b);
+  try {
+    const res = await fetchBill(code);
+    if (res.mode === 'public') {
+      isPrivate.value = false;
+      display.value = {
+        eventName: res.bill.eventName,
+        storeName: res.bill.storeName,
+        date: res.bill.date,
+        expiresAt: res.bill.expiresAt,
+        bankAccount: res.bill.bankAccount,
+      };
+      participants.value = res.bill.participants.map((p) => ({ id: p.id, name: p.name }));
+      calc.value = res.calc;
+    } else {
+      isPrivate.value = true;
+      display.value = {
+        eventName: res.eventName,
+        storeName: res.storeName,
+        date: res.date,
+        expiresAt: res.expiresAt,
+        bankAccount: res.bankAccount,
+      };
+      participants.value = res.participants;
     }
+    restoreSelection();
+  } catch (e) {
+    if (e instanceof Error && e.message === 'expired') {
+      expired.value = true;
+    } else {
+      notFound.value = true;
+    }
+  } finally {
+    loading.value = false;
   }
-
-  if (!b) {
-    notFound.value = true;
-    return;
-  }
-  if (exp) {
-    expired.value = true;
-    bill.value = b;
-    return;
-  }
-  bill.value = b;
-  const key = `splitbill_self_${b.id}`;
-  const saved = localStorage.getItem(key);
-  if (saved) selectedId.value = saved;
 });
 
-const calc = computed(() => (bill.value && !expired.value ? calculateBill(bill.value) : null));
-const me = computed(() => calc.value?.perPerson.find((p) => p.participantId === selectedId.value));
-const isPrivate = computed(() => bill.value?.privacyMode === 'private');
-
-function selectPerson(id: string) {
-  selectedId.value = id;
-  if (bill.value) localStorage.setItem(`splitbill_self_${bill.value.id}`, id);
+function restoreSelection() {
+  const saved = localStorage.getItem(`splitbill_self_${code}`);
+  if (saved) selectPerson(saved);
 }
 
-function markPaid() {
-  if (!bill.value || !selectedId.value) return;
-  const target = bill.value.participants.find((p) => p.id === selectedId.value);
-  if (target?.isPayer) {
+async function selectPerson(id: string) {
+  selectedId.value = id;
+  localStorage.setItem(`splitbill_self_${code}`, id);
+  if (!isPrivate.value) {
+    me.value = calc.value?.perPerson.find((p) => p.participantId === id) ?? null;
+    return;
+  }
+  try {
+    const res = await fetchBill(code, id);
+    me.value = res.mode === 'private' ? (res.me ?? null) : null;
+  } catch {
+    toast(tr('error'), 'error');
+  }
+}
+
+async function markPaid() {
+  if (!me.value || !selectedId.value) return;
+  if (me.value.isPayer) {
     toast(tr('payer'), 'info');
     return;
   }
-  bill.value = setParticipantPaid(bill.value, selectedId.value, 'paid');
-  toast(tr('paid'), 'success');
+  try {
+    await apiMarkPaid(code, selectedId.value, 'paid');
+    me.value = { ...me.value, paymentStatus: 'paid' };
+    toast(tr('paid'), 'success');
+  } catch {
+    toast(tr('error'), 'error');
+  }
 }
 
 async function copyAccount() {
-  if (!bill.value?.bankAccount.accountNumber) return;
+  if (!display.value?.bankAccount.accountNumber) return;
   try {
-    await navigator.clipboard.writeText(bill.value.bankAccount.accountNumber);
+    await navigator.clipboard.writeText(display.value.bankAccount.accountNumber);
     toast(tr('accountCopied'), 'success');
   } catch {
     /* ignore */
@@ -109,14 +159,16 @@ async function copyAccount() {
 }
 
 function waPay() {
-  if (!bill.value || !me.value) return;
-  const payer = bill.value.participants.find((p) => p.isPayer);
+  if (!display.value || !me.value) return;
+  // Bill privat tidak mengirim daftar isPayer per orang (TSD §7) — sapaan tanpa nama
+  // pembayar untuk kasus itu, sama seperti saat nama pembayar tak diketahui.
+  const payerName = calc.value?.perPerson.find((p) => p.isPayer)?.name;
   const text = [
-    `Halo${payer ? ` ${payer.name}` : ''},`,
-    `Saya ${me.value.name} sudah siap transfer untuk *${bill.value.eventName || 'Split Bill'}*.`,
+    `Halo${payerName ? ` ${payerName}` : ''},`,
+    `Saya ${me.value.name} sudah siap transfer untuk *${display.value.eventName || 'Split Bill'}*.`,
     `Nominal: ${formatCurrency(me.value.total, tr('currency'))}`,
-    bill.value.bankAccount.accountNumber
-      ? `Rek: ${bill.value.bankAccount.bankName} ${bill.value.bankAccount.accountNumber} a/n ${bill.value.bankAccount.accountName}`
+    display.value.bankAccount.accountNumber
+      ? `Rek: ${display.value.bankAccount.bankName} ${display.value.bankAccount.accountNumber} a/n ${display.value.bankAccount.accountName}`
       : '',
   ]
     .filter(Boolean)
@@ -141,8 +193,8 @@ function waPay() {
     </div>
     <p class="text-base font-semibold sm:text-lg">{{ tr('expiredTitle') }}</p>
     <p class="max-w-sm text-sm text-neutral-500">{{ tr('expiredDesc') }}</p>
-    <p v-if="bill" class="max-w-full truncate px-2 text-xs text-neutral-400">
-      {{ bill.eventName }} · {{ formatDate(bill.createdAt) }}
+    <p v-if="display" class="max-w-full truncate px-2 text-xs text-neutral-400">
+      {{ display.eventName }}<span v-if="display.createdAt"> · {{ formatDate(display.createdAt) }}</span>
     </p>
     <Button @click="router.push('/')">
       <Home class="h-4 w-4" />
@@ -150,7 +202,7 @@ function waPay() {
     </Button>
   </div>
 
-  <div v-else-if="!bill || !calc" class="flex min-h-[50dvh] items-center justify-center text-sm text-neutral-500">
+  <div v-else-if="loading || !display" class="flex min-h-[50dvh] items-center justify-center text-sm text-neutral-500">
     {{ tr('loading') }}
   </div>
 
@@ -158,18 +210,18 @@ function waPay() {
     <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
       <div class="min-w-0">
         <p class="text-[11px] uppercase tracking-wider text-neutral-400 sm:text-xs">{{ tr('friendView') }}</p>
-        <h1 class="mt-1 break-words text-xl font-semibold tracking-tight sm:text-2xl">{{ bill.eventName || 'Split Bill' }}</h1>
-        <p v-if="bill.storeName" class="truncate text-sm text-neutral-500">{{ bill.storeName }}</p>
+        <h1 class="mt-1 break-words text-xl font-semibold tracking-tight sm:text-2xl">{{ display.eventName || 'Split Bill' }}</h1>
+        <p v-if="display.storeName" class="truncate text-sm text-neutral-500">{{ display.storeName }}</p>
       </div>
       <div class="shrink-0 self-start">
-        <CountdownBadge :expires-at="bill.expiresAt" compact />
+        <CountdownBadge :expires-at="display.expiresAt" compact />
       </div>
     </div>
 
     <div v-if="!selectedId" class="flex flex-col gap-3">
       <p class="text-sm text-neutral-600 dark:text-neutral-300">{{ tr('selectParticipant') }}</p>
       <ul class="flex flex-col gap-2">
-        <li v-for="p in bill.participants" :key="p.id">
+        <li v-for="p in participants" :key="p.id">
           <button
             type="button"
             class="flex w-full items-center gap-3 rounded-2xl border border-neutral-200 bg-white p-4 text-left transition hover:border-neutral-400 dark:border-neutral-800 dark:bg-neutral-900"
@@ -182,7 +234,7 @@ function waPay() {
           </button>
         </li>
       </ul>
-      <div v-if="!isPrivate" class="mt-4 rounded-2xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
+      <div v-if="!isPrivate && calc" class="mt-4 rounded-2xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
         <p class="mb-2 text-xs font-medium text-neutral-500">{{ tr('grandTotal') }}</p>
         <p class="text-2xl font-semibold tabular-nums">{{ formatCurrency(calc.grandTotal, tr('currency')) }}</p>
       </div>
@@ -215,24 +267,23 @@ function waPay() {
         </ul>
       </div>
 
-      <div v-if="!isPrivate" class="rounded-2xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
+      <div v-if="!isPrivate && calc" class="rounded-2xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
         <h3 class="mb-2 text-sm font-semibold">{{ tr('paymentSummary') }}</h3>
         <ul class="flex flex-col gap-2">
           <li v-for="p in calc.perPerson" :key="p.participantId" class="flex items-center justify-between text-sm">
             <span :class="p.participantId === me.participantId ? 'font-semibold' : ''">
-              {{ bill.hideParticipantNames && p.participantId !== me.participantId ? '•••' : p.name
-              }}{{ p.participantId === me.participantId ? ` (${tr('you')})` : '' }}
+              {{ p.name }}{{ p.participantId === me.participantId ? ` (${tr('you')})` : '' }}
             </span>
             <span class="tabular-nums">{{ formatCurrency(p.total, tr('currency')) }}</span>
           </li>
         </ul>
       </div>
 
-      <div v-if="bill.bankAccount.accountNumber" class="rounded-2xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
+      <div v-if="display.bankAccount.accountNumber" class="rounded-2xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
         <p class="text-xs text-neutral-500">{{ tr('payTo') }}</p>
-        <p class="mt-1 text-sm font-medium">{{ bill.bankAccount.bankName }} · {{ bill.bankAccount.accountName }}</p>
+        <p class="mt-1 text-sm font-medium">{{ display.bankAccount.bankName }} · {{ display.bankAccount.accountName }}</p>
         <div class="mt-2 flex min-w-0 items-center gap-2">
-          <p class="min-w-0 break-all font-mono text-sm font-semibold sm:text-base">{{ bill.bankAccount.accountNumber }}</p>
+          <p class="min-w-0 break-all font-mono text-sm font-semibold sm:text-base">{{ display.bankAccount.accountNumber }}</p>
           <button
             type="button"
             class="shrink-0 rounded-lg border border-neutral-200 p-2 dark:border-neutral-700"

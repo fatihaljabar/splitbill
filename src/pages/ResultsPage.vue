@@ -23,16 +23,10 @@ import CountdownBadge from '../components/CountdownBadge.vue';
 import Button from '../components/ui/Button.vue';
 import Modal from '../components/ui/Modal.vue';
 import { useApp } from '../composables/useApp';
-import {
-  reloadBillWithPayments,
-  setParticipantPaid,
-  subscribePayments,
-  syncPaymentsFromBill,
-} from '../lib/payments.ts';
+import { markPaid as apiMarkPaid, createBill, fetchBill } from '../lib/api.ts';
 import { buildShareUrl } from '../lib/share.ts';
-import { loadBill, saveBill } from '../lib/storage.ts';
 
-const { tr, state, setCurrentBill, toast } = useApp();
+const { tr, state, toast } = useApp();
 const router = useRouter();
 const summaryRef = ref<HTMLDivElement | null>(null);
 const shareOpen = ref(false);
@@ -41,40 +35,69 @@ const qrOpen = ref(false);
 const bill = computed(() => state.currentBill);
 const calc = computed(() => (state.currentBill ? calculateBill(state.currentBill) : null));
 
-function refreshFromStorage() {
-  const current = state.currentBill;
-  if (!current) return;
-  const fromCode = reloadBillWithPayments(current.shortCode);
-  const fromId = fromCode || reloadBillWithPayments(current.id);
-  if (fromId) {
-    const changed =
-      fromId.participants.length === current.participants.length &&
-      fromId.participants.some((p) => {
-        const o = current.participants.find((x) => x.id === p.id);
-        return !o || o.paymentStatus !== p.paymentStatus;
-      });
-    if (changed || fromId.participants.length !== current.participants.length) {
-      setCurrentBill(fromId);
-    }
+// Kode dan masa berlaku dari server — bukan bill.shortCode lokal, server abaikan itu dan
+// terbitkan miliknya sendiri (TSD §6). Disimpan per bill.id di sessionStorage supaya
+// bolak-balik ke halaman ini (mis. dari BillPage) tidak menerbitkan link baru tiap kali —
+// tidak ada endpoint update, jadi satu bill lokal = satu kode server yang dipakai ulang.
+const serverCode = ref<string | null>(null);
+const serverExpiresAt = ref<number | null>(null);
+const posting = ref(false);
+const postFailed = ref(false);
+
+function postedKey(billId: string) {
+  return `splitbill_posted_${billId}`;
+}
+
+async function persistToServer() {
+  if (!bill.value) return;
+  const cached = sessionStorage.getItem(postedKey(bill.value.id));
+  if (cached) {
+    const { shortCode, expiresAt } = JSON.parse(cached) as {
+      shortCode: string;
+      expiresAt: number;
+    };
+    serverCode.value = shortCode;
+    serverExpiresAt.value = expiresAt;
     return;
   }
-  const raw = loadBill(current.shortCode) || loadBill(current.id);
-  if (raw) {
-    setCurrentBill(syncPaymentsFromBill(raw));
+  posting.value = true;
+  postFailed.value = false;
+  try {
+    const { shortCode, expiresAt } = await createBill(bill.value);
+    serverCode.value = shortCode;
+    serverExpiresAt.value = expiresAt;
+    sessionStorage.setItem(postedKey(bill.value.id), JSON.stringify({ shortCode, expiresAt }));
+  } catch {
+    postFailed.value = true;
+    toast(tr('error'), 'error');
+  } finally {
+    posting.value = false;
   }
 }
 
-let unsub: (() => void) | undefined;
+async function refreshFromServer() {
+  if (!serverCode.value || !state.currentBill) return;
+  try {
+    const res = await fetchBill(serverCode.value);
+    // ponytail: bila bill.privacyMode === 'private', GET tanpa ?p= sengaja tidak membawa
+    // status bayar (kontrak TSD §7 tidak punya jalur "pemilik" yang bisa lihat semua status
+    // pada bill privat). Poll di sini efektif no-op untuk bill privat sampai ada endpoint
+    // khusus pemilik.
+    if (res.mode === 'public') {
+      state.currentBill = { ...state.currentBill, participants: res.bill.participants };
+    }
+  } catch {
+    /* diamkan — polling latar belakang, jangan ganggu pengguna dengan toast tiap gagal */
+  }
+}
+
 let poll: ReturnType<typeof setInterval> | undefined;
 
-onMounted(() => {
+onMounted(async () => {
   if (!state.currentBill) {
     router.push('/bill');
     return;
   }
-  const synced = syncPaymentsFromBill(state.currentBill);
-  setCurrentBill(synced);
-  saveBill(synced);
 
   confetti({
     particleCount: 80,
@@ -87,20 +110,18 @@ onMounted(() => {
     confetti({ particleCount: 40, angle: 120, spread: 55, origin: { x: 1 } });
   }, 200);
 
-  unsub = subscribePayments((billId) => {
-    if (billId === '*' || billId === state.currentBill?.id) refreshFromStorage();
-  });
-  window.addEventListener('focus', refreshFromStorage);
-  poll = setInterval(refreshFromStorage, 2500);
+  await persistToServer();
+
+  poll = setInterval(() => {
+    if (!document.hidden) refreshFromServer();
+  }, 5000);
 });
 
 onUnmounted(() => {
-  unsub?.();
-  window.removeEventListener('focus', refreshFromStorage);
   if (poll) clearInterval(poll);
 });
 
-const shareUrl = computed(() => (bill.value ? buildShareUrl(bill.value) : ''));
+const shareUrl = computed(() => (serverCode.value ? buildShareUrl(serverCode.value) : ''));
 
 async function copyLink() {
   try {
@@ -146,12 +167,24 @@ async function downloadImage() {
   }
 }
 
-function togglePaid(pid: string) {
-  if (!bill.value) return;
+async function togglePaid(pid: string) {
+  if (!bill.value || !serverCode.value) return;
   const target = bill.value.participants.find((p) => p.id === pid);
   if (!target || target.isPayer) return;
   const nextStatus = target.paymentStatus === 'paid' ? 'unpaid' : 'paid';
-  setCurrentBill(setParticipantPaid(bill.value, pid, nextStatus));
+  // Optimistic — server tetap sumber kebenaran, poll berikutnya mengoreksi bila gagal.
+  state.currentBill = {
+    ...bill.value,
+    participants: bill.value.participants.map((p) =>
+      p.id === pid ? { ...p, paymentStatus: nextStatus } : p,
+    ),
+  };
+  try {
+    await apiMarkPaid(serverCode.value, pid, nextStatus);
+  } catch {
+    toast(tr('error'), 'error');
+    refreshFromServer();
+  }
 }
 
 async function copyAccount() {
@@ -164,10 +197,9 @@ async function copyAccount() {
   }
 }
 
-function generateLink() {
-  if (!bill.value) return;
-  saveBill(bill.value);
-  shareOpen.value = true;
+async function generateLink() {
+  if (postFailed.value) await persistToServer();
+  if (serverCode.value) shareOpen.value = true;
 }
 </script>
 
@@ -195,7 +227,7 @@ function generateLink() {
           <Pencil class="h-3.5 w-3.5" />
           <span class="hidden min-[360px]:inline">{{ tr('editBill') }}</span>
         </button>
-        <CountdownBadge :expires-at="bill.expiresAt" compact />
+        <CountdownBadge :expires-at="serverExpiresAt ?? bill.expiresAt" compact />
       </div>
     </div>
 
@@ -350,7 +382,7 @@ function generateLink() {
     </div>
 
     <div class="flex flex-col gap-2 sm:flex-row">
-      <Button size="lg" full-width @click="generateLink">
+      <Button size="lg" full-width :loading="posting" @click="generateLink">
         <Link2 class="h-4 w-4" />
         {{ tr('generateLink') }}
       </Button>
@@ -360,7 +392,7 @@ function generateLink() {
     <Modal :open="shareOpen" :title="tr('shareLink')" @close="shareOpen = false">
       <div class="flex flex-col gap-4">
         <p class="text-xs text-neutral-500">{{ tr('shareHint') }}</p>
-        <CountdownBadge :expires-at="bill.expiresAt" />
+        <CountdownBadge :expires-at="serverExpiresAt ?? bill.expiresAt" />
         <div class="flex items-start gap-2 rounded-xl border border-neutral-200 bg-neutral-50 p-3 dark:border-neutral-700 dark:bg-neutral-950">
           <p class="min-w-0 flex-1 break-all font-mono text-[11px] leading-relaxed sm:text-xs">{{ shareUrl }}</p>
           <button

@@ -15,6 +15,21 @@ async function purgeExpired(): Promise<void> {
 
 type ActiveBillResult = { ok: true; bill: Bill } | { ok: false; error: 'not_found' | 'expired' };
 
+/** Timpa participants[].paymentStatus dengan status sungguhan dari tabel payments —
+ * bills.data adalah snapshot saat dibuat, tabel payments adalah sumber kebenaran status
+ * bayar (PRD F15: pembuat bill melihat status dari perangkat mana pun). */
+async function mergePayments(bill: Bill, code: string): Promise<Bill> {
+  const rows = await db.select().from(payments).where(eq(payments.shortCode, code));
+  if (rows.length === 0) return bill;
+  const statusById = new Map(rows.map((r) => [r.participantId, r.status]));
+  return {
+    ...bill,
+    participants: bill.participants.map((p) =>
+      p.isPayer ? p : { ...p, paymentStatus: statusById.get(p.id) ?? p.paymentStatus },
+    ),
+  };
+}
+
 /** Cari bill aktif per kode. Baris yang sudah lewat masa berlaku dihapus di sini juga —
  * dipakai bersama GET /:code dan POST /:code/pay, keduanya butuh perilaku yang sama. */
 async function findActiveBill(code: string): Promise<ActiveBillResult> {
@@ -26,7 +41,7 @@ async function findActiveBill(code: string): Promise<ActiveBillResult> {
     return { ok: false, error: 'expired' };
   }
 
-  return { ok: true, bill: row.data };
+  return { ok: true, bill: await mergePayments(row.data, code) };
 }
 
 const DAY_MS = 24 * 60 * 60 * 1000;
