@@ -9,12 +9,13 @@ import {
   primaryKey,
   varchar,
 } from 'drizzle-orm/mysql-core';
+import type { Bill } from '../shared/types.ts';
 
 export const bills = mysqlTable(
   'bills',
   {
     shortCode: varchar('short_code', { length: 12 }).primaryKey(),
-    data: json('data').notNull(),
+    data: json('data').$type<Bill>().notNull(),
     createdAt: bigint('created_at', { mode: 'number' }).notNull(),
     expiresAt: bigint('expires_at', { mode: 'number' }).notNull(),
   },
