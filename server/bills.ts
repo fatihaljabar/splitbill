@@ -1,8 +1,9 @@
 import { getConnInfo } from '@hono/node-server/conninfo';
-import { lt } from 'drizzle-orm';
+import { eq, lt } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { Hono } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
+import { calculateBill } from '../shared/calculate.ts';
 import { shortCode } from '../shared/format.ts';
 import type { Bill } from '../shared/types.ts';
 import { db } from './db.ts';
@@ -129,3 +130,43 @@ billsRoute.post(
     return c.json({ error: 'invalid_bill' }, 400);
   },
 );
+
+billsRoute.get('/:code', async (c) => {
+  const code = c.req.param('code');
+  const [row] = await db.select().from(bills).where(eq(bills.shortCode, code));
+
+  if (!row) {
+    return c.json({ error: 'not_found' }, 404);
+  }
+
+  if (row.expiresAt < Date.now()) {
+    await db.delete(bills).where(eq(bills.shortCode, code));
+    return c.json({ error: 'expired' }, 410);
+  }
+
+  const bill = row.data;
+
+  if (bill.privacyMode === 'public') {
+    return c.json({ mode: 'public', bill, calc: calculateBill(bill) });
+  }
+
+  const base = {
+    mode: 'private' as const,
+    eventName: bill.eventName,
+    storeName: bill.storeName,
+    date: bill.date,
+    expiresAt: bill.expiresAt,
+    bankAccount: bill.bankAccount,
+    // Wajib dikirim meski hideParticipantNames aktif — penerima harus bisa
+    // memilih namanya sendiri dari daftar. Nominal tetap nol di sini, itu
+    // yang dijaga F13, bukan daftar nama ini. Lihat TSD §7.
+    participants: bill.participants.map((p) => ({ id: p.id, name: p.name })),
+  };
+
+  const participantId = c.req.query('p');
+  const me = participantId
+    ? calculateBill(bill).perPerson.find((p) => p.participantId === participantId)
+    : undefined;
+
+  return c.json(me ? { ...base, me } : base);
+});
