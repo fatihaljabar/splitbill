@@ -9,6 +9,8 @@
     "skipLibCheck": true,
     "outDir": "dist-server",
     "rootDir": ".",
+    "allowImportingTsExtensions": true,
+    "rewriteRelativeImportExtensions": true,
 
     "strict": true,
     "noUnusedLocals": true,
