@@ -15,7 +15,7 @@ const Placeholder = {
 const routes: RouteRecordRaw[] = [
   { path: '/', component: () => import('./pages/HomePage.vue') },
   { path: '/bill', component: Placeholder, props: { name: 'BillPage' } },
-  { path: '/scan', component: Placeholder, props: { name: 'ScanPage' } },
+  { path: '/scan', component: () => import('./pages/ScanPage.vue') },
   { path: '/review', component: () => import('./pages/ReviewPage.vue') },
   { path: '/results', component: Placeholder, props: { name: 'ResultsPage' } },
   {
