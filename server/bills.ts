@@ -7,10 +7,26 @@ import { calculateBill } from '../shared/calculate.ts';
 import { shortCode } from '../shared/format.ts';
 import type { Bill } from '../shared/types.ts';
 import { db } from './db.ts';
-import { bills } from './schema.ts';
+import { bills, payments } from './schema.ts';
 
 async function purgeExpired(): Promise<void> {
   await db.delete(bills).where(lt(bills.expiresAt, Date.now()));
+}
+
+type ActiveBillResult = { ok: true; bill: Bill } | { ok: false; error: 'not_found' | 'expired' };
+
+/** Cari bill aktif per kode. Baris yang sudah lewat masa berlaku dihapus di sini juga —
+ * dipakai bersama GET /:code dan POST /:code/pay, keduanya butuh perilaku yang sama. */
+async function findActiveBill(code: string): Promise<ActiveBillResult> {
+  const [row] = await db.select().from(bills).where(eq(bills.shortCode, code));
+  if (!row) return { ok: false, error: 'not_found' };
+
+  if (row.expiresAt < Date.now()) {
+    await db.delete(bills).where(eq(bills.shortCode, code));
+    return { ok: false, error: 'expired' };
+  }
+
+  return { ok: true, bill: row.data };
 }
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -133,18 +149,11 @@ billsRoute.post(
 
 billsRoute.get('/:code', async (c) => {
   const code = c.req.param('code');
-  const [row] = await db.select().from(bills).where(eq(bills.shortCode, code));
-
-  if (!row) {
-    return c.json({ error: 'not_found' }, 404);
+  const result = await findActiveBill(code);
+  if (!result.ok) {
+    return c.json({ error: result.error }, result.error === 'expired' ? 410 : 404);
   }
-
-  if (row.expiresAt < Date.now()) {
-    await db.delete(bills).where(eq(bills.shortCode, code));
-    return c.json({ error: 'expired' }, 410);
-  }
-
-  const bill = row.data;
+  const { bill } = result;
 
   if (bill.privacyMode === 'public') {
     return c.json({ mode: 'public', bill, calc: calculateBill(bill) });
@@ -169,4 +178,42 @@ billsRoute.get('/:code', async (c) => {
     : undefined;
 
   return c.json(me ? { ...base, me } : base);
+});
+
+billsRoute.post('/:code/pay', async (c) => {
+  const code = c.req.param('code');
+  const result = await findActiveBill(code);
+  if (!result.ok) {
+    return c.json({ error: result.error }, result.error === 'expired' ? 410 : 404);
+  }
+
+  let body: unknown;
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ error: 'invalid_participant' }, 400);
+  }
+
+  const b = body as Record<string, unknown>;
+  if (typeof b.participantId !== 'string' || (b.status !== 'paid' && b.status !== 'unpaid')) {
+    return c.json({ error: 'invalid_participant' }, 400);
+  }
+
+  const isRealParticipant = result.bill.participants.some((p) => p.id === b.participantId);
+  if (!isRealParticipant) {
+    return c.json({ error: 'invalid_participant' }, 400);
+  }
+
+  const now = Date.now();
+  await db
+    .insert(payments)
+    .values({
+      shortCode: code,
+      participantId: b.participantId,
+      status: b.status,
+      updatedAt: now,
+    })
+    .onDuplicateKeyUpdate({ set: { status: b.status, updatedAt: now } });
+
+  return c.body(null, 204);
 });
