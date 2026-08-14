@@ -14,8 +14,17 @@ app.route('/api/bills', billsRoute);
 app.use('/*', serveStatic({ root: './dist' }));
 app.get('*', serveStatic({ path: './dist/index.html' }));
 
-await runMigrations();
+// Tanpa top-level await: Hostinger memuat entry point ini lewat require()
+// (lsnode.js, launcher Node LiteSpeed), dan require() tidak bisa menunggu
+// await di level atas modul — proses gagal start sama sekali kalau ada.
+async function main(): Promise<void> {
+  await runMigrations();
+  const port = Number(process.env.PORT) || 3000;
+  serve({ fetch: app.fetch, port });
+  console.log(`splitbill server listening on :${port}`);
+}
 
-const port = Number(process.env.PORT) || 3000;
-serve({ fetch: app.fetch, port });
-console.log(`splitbill server listening on :${port}`);
+main().catch((err) => {
+  console.error('Gagal start server:', err);
+  process.exit(1);
+});
