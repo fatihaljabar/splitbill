@@ -1,4 +1,4 @@
-import type { OcrResult } from '../types';
+import type { OcrResult } from '../../shared/types.ts';
 
 export type ParsedItem = { name: string; price: number; qty: number };
 

@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "dev:server": "node --watch --env-file-if-exists=.env server/index.ts",
+    "db:generate": "drizzle-kit generate",
     "prebuild": "node scripts/copy-tesseract.mjs",
     "build": "tsc -b && tsc -p tsconfig.server.json && vite build",
     "start": "node dist-server/server/index.js",
@@ -17,11 +18,13 @@
     "@hono/node-server": "^2.1.0",
     "@tailwindcss/vite": "^4.2.1",
     "canvas-confetti": "^1.9.4",
+    "drizzle-orm": "^0.45.2",
     "framer-motion": "^12.35.0",
     "hono": "^4.13.2",
     "html-to-image": "^1.11.13",
     "lucide-react": "^0.577.0",
     "lz-string": "^1.5.0",
+    "mysql2": "^3.23.3",
     "qrcode.react": "^4.2.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
@@ -39,6 +42,7 @@
     "@types/react-dom": "^19.2.3",
     "@types/uuid": "^10.0.0",
     "@vitejs/plugin-react": "^5.1.1",
+    "drizzle-kit": "^0.31.10",
     "typescript": "~5.9.3",
     "vite": "^7.3.1"
   }

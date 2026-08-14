@@ -17,8 +17,8 @@ import { motion } from 'framer-motion';
 import { useApp } from '../context/AppContext';
 import { Button } from '../components/ui/Button';
 import { cropImageToCanvas, forceNormalizeQtyPrice, preprocessImage, runOcr } from '../lib/ocr';
-import { uid } from '../lib/format';
-import type { BillItem, OcrResult } from '../types';
+import { uid } from '../../shared/format.ts';
+import type { BillItem, OcrResult } from '../../shared/types.ts';
 
 type Phase = 'choose' | 'camera' | 'preview' | 'crop' | 'processing';
 

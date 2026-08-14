@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "mysql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1786682903442,
+      "tag": "0000_slow_stark_industries",
+      "breakpoints": true
+    }
+  ]
+}

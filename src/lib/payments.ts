@@ -1,4 +1,4 @@
-import type { Bill, PaymentStatus } from '../types';
+import type { Bill, PaymentStatus } from '../../shared/types.ts';
 import { loadBill, saveBill } from './storage';
 
 const PAYMENTS_KEY = 'splitbill_payments';

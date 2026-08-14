@@ -1,4 +1,4 @@
-import type { Bill, CalculationResult, PersonBreakdown, Settlement } from '../types';
+import type { Bill, CalculationResult, PersonBreakdown, Settlement } from './types.ts';
 
 function round2(n: number): number {
   return Math.round(n);
