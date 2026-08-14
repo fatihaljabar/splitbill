@@ -1,7 +1,7 @@
 import { h } from 'vue';
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router';
 
-// Placeholder sampai tugas 11-15 (halaman sungguhan). Membuktikan routing,
+// Placeholder sampai tugas 12-15 (halaman sungguhan). Membuktikan routing,
 // mode history, dan parameter rute (:code) bekerja tanpa file sekali-pakai.
 // h() dipakai, bukan `template:` string — build Vite pakai Vue runtime-only,
 // yang tidak menyertakan compiler untuk template string di waktu jalan.
@@ -13,10 +13,10 @@ const Placeholder = {
 };
 
 const routes: RouteRecordRaw[] = [
-  { path: '/', component: Placeholder, props: { name: 'HomePage' } },
+  { path: '/', component: () => import('./pages/HomePage.vue') },
   { path: '/bill', component: Placeholder, props: { name: 'BillPage' } },
   { path: '/scan', component: Placeholder, props: { name: 'ScanPage' } },
-  { path: '/review', component: Placeholder, props: { name: 'ReviewPage' } },
+  { path: '/review', component: () => import('./pages/ReviewPage.vue') },
   { path: '/results', component: Placeholder, props: { name: 'ResultsPage' } },
   {
     path: '/s/:code',

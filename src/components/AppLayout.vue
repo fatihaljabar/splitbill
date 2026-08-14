@@ -54,24 +54,16 @@ const isScan = computed(() => route.path === '/scan');
         </div>
       </div>
     </header>
-    <Transition
-      mode="out-in"
-      enter-active-class="transition duration-[180ms]"
-      enter-from-class="opacity-0 translate-y-1"
-      enter-to-class="opacity-100 translate-y-0"
+    <main
+      :class="`app-shell min-w-0 flex-1 ${
+        isFriend
+          ? 'py-4 sm:py-6'
+          : isHome || isScan
+            ? 'pb-6 pt-4 sm:pb-8 sm:pt-5 md:pt-6'
+            : 'pb-8 pt-4 sm:pb-10 sm:pt-5 md:pt-6'
+      }`"
     >
-      <main
-        :key="route.path"
-        :class="`app-shell min-w-0 flex-1 ${
-          isFriend
-            ? 'py-4 sm:py-6'
-            : isHome || isScan
-              ? 'pb-6 pt-4 sm:pb-8 sm:pt-5 md:pt-6'
-              : 'pb-8 pt-4 sm:pb-10 sm:pt-5 md:pt-6'
-        }`"
-      >
-        <slot />
-      </main>
-    </Transition>
+      <slot />
+    </main>
   </div>
 </template>
