@@ -104,6 +104,25 @@ export interface CalculationResult {
   calculatedTotal: number;
 }
 
+export interface PublicBillResponse {
+  mode: 'public';
+  bill: Bill;
+  calc: CalculationResult;
+}
+
+export interface PrivateBillResponse {
+  mode: 'private';
+  eventName: string;
+  storeName?: string;
+  date?: string;
+  expiresAt: number;
+  bankAccount: BankAccount;
+  participants: Array<{ id: string; name: string }>;
+  me?: PersonBreakdown;
+}
+
+export type BillResponse = PublicBillResponse | PrivateBillResponse;
+
 export interface HistoryEntry {
   id: string;
   shortCode: string;

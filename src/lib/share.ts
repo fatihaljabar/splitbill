@@ -1,22 +1,10 @@
-import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from 'lz-string';
+import { decompressFromEncodedURIComponent } from 'lz-string';
 import type { Bill } from '../../shared/types.ts';
 
-/** Compact bill for URL payload (strip heavy fields + compress) */
-export function encodeBill(bill: Bill): string {
-  try {
-    const compact = {
-      ...bill,
-      receiptImage: undefined,
-    };
-    return compressToEncodedURIComponent(JSON.stringify(compact));
-  } catch {
-    return '';
-  }
-}
-
+/** Dipertahankan supaya link lama (data bill dititipkan di URL, sebelum server jadi sumber
+ * kebenaran) tetap bisa dibuka. Tidak ada lagi yang menerbitkan link berformat ini. */
 export function decodeBill(payload: string): Bill | null {
   try {
-    // lz-string first
     let json = decompressFromEncodedURIComponent(payload);
     if (!json) {
       // legacy base64url fallback
@@ -32,12 +20,7 @@ export function decodeBill(payload: string): Bill | null {
   }
 }
 
-export function buildSharePath(bill: Bill): string {
-  const data = encodeBill(bill);
-  return `#/s/${bill.shortCode}?d=${data}`;
-}
-
-export function buildShareUrl(bill: Bill): string {
-  if (typeof window === 'undefined') return buildSharePath(bill);
-  return `${window.location.origin}${window.location.pathname}${buildSharePath(bill)}`;
+export function buildShareUrl(shortCode: string): string {
+  const origin = typeof window === 'undefined' ? '' : window.location.origin;
+  return `${origin}/s/${shortCode}`;
 }
