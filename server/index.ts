@@ -1,16 +1,18 @@
 import { serve } from '@hono/node-server';
+import { serveStatic } from '@hono/node-server/serve-static';
 import { Hono } from 'hono';
 import { billsRoute } from './bills.ts';
 import { runMigrations } from './db.ts';
 
 const app = new Hono();
 
-// Tugas 3: bukti proses ini benar-benar hidup terus di Hostinger, bukan
-// sekadar menyajikan berkas statis. Penyajian statis + catch-all menyusul
-// di tugas 8.
-app.get('/', (c) => c.json({ ok: true, startedAt: new Date().toISOString() }));
-
 app.route('/api/bills', billsRoute);
+
+// Urutan wajib: /api/* dulu, baru statis, baru catch-all. Tanpa catch-all,
+// membuka /s/AB12CD34 langsung (bukan lewat navigasi client-side) akan 404 —
+// ini yang membuat mode history router bekerja.
+app.use('/*', serveStatic({ root: './dist' }));
+app.get('*', serveStatic({ path: './dist/index.html' }));
 
 await runMigrations();
 
