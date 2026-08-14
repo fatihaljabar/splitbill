@@ -26,5 +26,10 @@ async function main(): Promise<void> {
 
 main().catch((err) => {
   console.error('Gagal start server:', err);
+  // Drizzle membungkus error driver mysql2 asli di err.cause — err sendiri
+  // cuma bilang "Failed query", pesan MySQL yang sesungguhnya ada di sini.
+  if (err instanceof Error && err.cause) {
+    console.error('Penyebab asli:', err.cause);
+  }
   process.exit(1);
 });
