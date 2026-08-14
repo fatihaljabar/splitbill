@@ -21,8 +21,8 @@ import { useApp } from '../context/AppContext';
 import { Button } from '../components/ui/Button';
 import { Modal } from '../components/ui/Modal';
 import { Countdown } from '../components/Countdown';
-import { formatCurrency, formatDate } from '../lib/format';
-import { calculateBill, buildShareText } from '../lib/calculate';
+import { formatCurrency, formatDate } from '../../shared/format.ts';
+import { calculateBill, buildShareText } from '../../shared/calculate.ts';
 import { loadBill, saveBill } from '../lib/storage';
 import { buildShareUrl } from '../lib/share';
 import {

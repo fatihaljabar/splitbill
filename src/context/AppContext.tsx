@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import type { Bill, Lang, Theme } from '../types';
+import type { Bill, Lang, Theme } from '../../shared/types.ts';
 import { t, type TranslationKey } from '../i18n/translations';
 import {
   loadSettings,
@@ -18,7 +18,7 @@ import {
   loadDraft,
   saveDraft,
 } from '../lib/storage';
-import { shortCode, uid } from '../lib/format';
+import { shortCode, uid } from '../../shared/format.ts';
 
 interface Toast {
   id: string;

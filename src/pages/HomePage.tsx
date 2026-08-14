@@ -15,7 +15,7 @@ import { useNavigate } from 'react-router-dom';
 import { useMemo, useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { Button } from '../components/ui/Button';
-import { formatCurrency, formatDate } from '../lib/format';
+import { formatCurrency, formatDate } from '../../shared/format.ts';
 import { clearHistory, deleteHistoryEntry, loadHistory } from '../lib/storage';
 import { Modal } from '../components/ui/Modal';
 

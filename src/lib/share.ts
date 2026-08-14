@@ -1,5 +1,5 @@
 import { compressToEncodedURIComponent, decompressFromEncodedURIComponent } from 'lz-string';
-import type { Bill } from '../types';
+import type { Bill } from '../../shared/types.ts';
 
 /** Compact bill for URL payload (strip heavy fields + compress) */
 export function encodeBill(bill: Bill): string {

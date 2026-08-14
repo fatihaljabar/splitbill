@@ -5,12 +5,12 @@ import { motion } from 'framer-motion';
 import { useApp } from '../context/AppContext';
 import { Button } from '../components/ui/Button';
 import { Countdown } from '../components/Countdown';
-import { formatCurrency, formatDate } from '../lib/format';
-import { calculateBill } from '../lib/calculate';
+import { formatCurrency, formatDate } from '../../shared/format.ts';
+import { calculateBill } from '../../shared/calculate.ts';
 import { loadBillIncludingExpired, saveBill } from '../lib/storage';
 import { decodeBill } from '../lib/share';
 import { setParticipantPaid, syncPaymentsFromBill } from '../lib/payments';
-import type { Bill } from '../types';
+import type { Bill } from '../../shared/types.ts';
 
 export function FriendPage() {
   const { code } = useParams<{ code: string }>();

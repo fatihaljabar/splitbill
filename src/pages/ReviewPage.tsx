@@ -6,9 +6,9 @@ import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { CurrencyInput } from '../components/ui/CurrencyInput';
 import { NumberInput } from '../components/ui/NumberInput';
-import { formatCurrency, uid } from '../lib/format';
+import { formatCurrency, uid } from '../../shared/format.ts';
 import { forceNormalizeQtyPrice } from '../lib/ocr';
-import type { BillItem } from '../types';
+import type { BillItem } from '../../shared/types.ts';
 
 interface ReviewData {
   items: Array<{ id: string; name: string; price: number; qty: number }>;

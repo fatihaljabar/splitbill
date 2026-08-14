@@ -1,13 +1,16 @@
 import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
+import { billsRoute } from './bills.ts';
 import { runMigrations } from './db.ts';
 
 const app = new Hono();
 
 // Tugas 3: bukti proses ini benar-benar hidup terus di Hostinger, bukan
-// sekadar menyajikan berkas statis. Rute API dan penyajian statis menyusul
-// di tugas 4-8.
+// sekadar menyajikan berkas statis. Penyajian statis + catch-all menyusul
+// di tugas 8.
 app.get('/', (c) => c.json({ ok: true, startedAt: new Date().toISOString() }));
+
+app.route('/api/bills', billsRoute);
 
 await runMigrations();
 

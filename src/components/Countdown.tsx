@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { formatCountdown } from '../lib/format';
+import { formatCountdown } from '../../shared/format.ts';
 import { useApp } from '../context/AppContext';
 import { Clock } from 'lucide-react';
 
