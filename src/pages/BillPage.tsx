@@ -28,10 +28,10 @@ import { Toggle } from '../components/ui/Toggle';
 import { CurrencyInput } from '../components/ui/CurrencyInput';
 import { NumberInput } from '../components/ui/NumberInput';
 import { ParticipantChips } from '../components/ParticipantChips';
-import { formatCurrency } from '../lib/format';
-import { uid } from '../lib/format';
-import type { BillItem, Participant, SplitMethod, PrivacyMode } from '../types';
-import { calculateBill } from '../lib/calculate';
+import { formatCurrency } from '../../shared/format.ts';
+import { uid } from '../../shared/format.ts';
+import type { BillItem, Participant, SplitMethod, PrivacyMode } from '../../shared/types.ts';
+import { calculateBill } from '../../shared/calculate.ts';
 
 type Tab = 'people' | 'items' | 'fees' | 'settings';
 

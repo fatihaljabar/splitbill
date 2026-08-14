@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import type { Participant } from '../types';
+import type { Participant } from '../../shared/types.ts';
 
 interface Props {
   participants: Participant[];

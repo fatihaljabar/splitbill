@@ -1,5 +1,5 @@
-import type { Bill, HistoryEntry } from '../types';
-import { calculateBill } from './calculate';
+import type { Bill, HistoryEntry } from '../../shared/types.ts';
+import { calculateBill } from '../../shared/calculate.ts';
 
 const HISTORY_KEY = 'splitbill_history';
 const BILLS_KEY = 'splitbill_bills';
