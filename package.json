@@ -11,6 +11,7 @@
     "build": "vue-tsc -b && tsc -p tsconfig.server.json && vite build",
     "start": "node dist-server/server/index.js",
     "preview": "vite preview",
+    "test": "node --test shared/*.test.ts",
     "lint": "biome check .",
     "format": "biome check --write ."
   },
