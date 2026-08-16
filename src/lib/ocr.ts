@@ -1882,7 +1882,7 @@ export async function preprocessImage(
   return canvas;
 }
 
-function loadImage(
+export function loadImage(
   source: HTMLImageElement | HTMLCanvasElement | string
 ): Promise<HTMLImageElement | HTMLCanvasElement> {
   if (typeof source !== 'string') return Promise.resolve(source);

@@ -205,9 +205,15 @@ const hasUnassignedItems = computed(
     bill.value.items.some((it) => !it.participantIds || it.participantIds.length === 0),
 );
 
-function goToResults() {
-  persistBill();
+async function goToResults() {
+  await persistBill();
   router.push('/results');
+}
+
+async function leaveBillConfirmed() {
+  await persistBill();
+  leaveOpen.value = false;
+  router.push('/');
 }
 
 function handleCalculate() {
@@ -643,14 +649,7 @@ function onGalleryFile(e: Event) {
         <p class="text-[13px] leading-relaxed text-neutral-600 dark:text-neutral-300">{{ tr('leaveBillDesc') }}</p>
         <div class="flex flex-col-reverse gap-2 sm:flex-row">
           <Button variant="outline" full-width @click="leaveOpen = false">{{ tr('leaveBillStay') }}</Button>
-          <Button
-            full-width
-            @click="
-              persistBill();
-              leaveOpen = false;
-              router.push('/');
-            "
-          >
+          <Button full-width @click="leaveBillConfirmed">
             {{ tr('leaveBillConfirm') }}
           </Button>
         </div>

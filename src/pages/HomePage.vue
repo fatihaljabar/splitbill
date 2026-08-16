@@ -17,7 +17,7 @@ import { formatCurrency, formatDate } from '../../shared/format.ts';
 import Button from '../components/ui/Button.vue';
 import Modal from '../components/ui/Modal.vue';
 import { useApp } from '../composables/useApp';
-import { clearHistory, deleteHistoryEntry, loadHistory } from '../lib/storage.ts';
+import { clearHistory, deleteHistoryEntry, loadBill, loadHistory } from '../lib/storage.ts';
 
 const { tr, createEmptyBill, setCurrentBill, toast } = useApp();
 const router = useRouter();
@@ -57,12 +57,14 @@ function startScan() {
 
 function openBill(id: string, expired: boolean) {
   if (expired) {
-    router.push(`/s/${id}`);
+    // Kedaluwarsa berarti baris di server sudah dihapus (F17) — tidak ada apa pun untuk
+    // ditampilkan, jadi tidak usah navigasi ke halaman yang pasti "tidak ditemukan".
+    toast(tr('expiredDesc'), 'info');
     return;
   }
-  const entry = history.value.find((h) => h.id === id);
-  if (entry) {
-    setCurrentBill(entry.bill);
+  const bill = loadBill(id);
+  if (bill) {
+    setCurrentBill(bill);
     router.push('/results');
   }
 }
