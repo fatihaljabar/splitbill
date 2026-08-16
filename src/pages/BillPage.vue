@@ -54,6 +54,18 @@ const unassignedOpen = ref(false);
 const bill = computed(() => state.currentBill!);
 const calc = computed(() => (state.currentBill ? calculateBill(state.currentBill) : null));
 
+// F7: sistem tidak boleh diam-diam membetulkan persentase/nominal khusus yang tidak
+// berjumlah pas — cuma memberi tahu. calculateBill() sendiri tidak diubah.
+const percentageSum = computed(() =>
+  bill.value.participants.reduce((s, p) => s + (p.percentage ?? 0), 0),
+);
+const percentageMatches = computed(() => percentageSum.value === 100);
+
+const customSum = computed(() =>
+  bill.value.participants.reduce((s, p) => s + (p.customAmount ?? 0), 0),
+);
+const customMatches = computed(() => customSum.value === (calc.value?.grandTotal ?? 0));
+
 const tabs: { id: Tab; label: string; icon: unknown }[] = [
   {
     id: 'people',
@@ -410,8 +422,27 @@ function onGalleryFile(e: Event) {
             "
           />
         </div>
-        <p v-if="bill.splitMethod === 'percentage'" class="text-xs text-neutral-500">
-          {{ tr('percentageTotal') }}: {{ bill.participants.reduce((s, p) => s + (p.percentage ?? 0), 0) }}%
+        <p
+          v-if="bill.splitMethod === 'percentage'"
+          :class="`rounded-lg px-2.5 py-1.5 text-xs font-medium ${
+            percentageMatches
+              ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400'
+              : 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400'
+          }`"
+        >
+          {{ percentageMatches ? tr('splitMatch') : tr('percentageMismatch') }} ·
+          {{ tr('percentageTotal') }}: {{ percentageSum }}%
+        </p>
+        <p
+          v-if="bill.splitMethod === 'custom'"
+          :class="`rounded-lg px-2.5 py-1.5 text-xs font-medium ${
+            customMatches
+              ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400'
+              : 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400'
+          }`"
+        >
+          {{ customMatches ? tr('splitMatch') : tr('customMismatch') }} ·
+          {{ formatCurrency(customSum, tr('currency')) }} / {{ formatCurrency(calc?.grandTotal ?? 0, tr('currency')) }}
         </p>
       </div>
     </div>
