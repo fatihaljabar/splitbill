@@ -1,4 +1,4 @@
-import { reactive, watch } from 'vue';
+import { nextTick, reactive, watch } from 'vue';
 import { shortCode, uid } from '../../shared/format.ts';
 import type { Bill, Lang, Theme } from '../../shared/types.ts';
 import { type TranslationKey, t } from '../i18n/translations.ts';
@@ -73,10 +73,16 @@ watch(
 );
 
 let draftTimer: ReturnType<typeof setTimeout> | undefined;
+// persistBill() memakai ini untuk menahan autosave draft sesaat — tanpa ini, watcher yang
+// sama menulis ulang draft ~400ms setelah persistBill sengaja menghapusnya (splitbill_draft
+// jadi menyimpan salinan ketiga receiptImage yang sudah dikompresi, persis pemborosan yang
+// mau dihindari tugas ini).
+let suppressDraftSave = false;
 watch(
   () => state.currentBill,
   (bill) => {
     clearTimeout(draftTimer);
+    if (suppressDraftSave) return;
     if (bill) draftTimer = setTimeout(() => saveDraft(bill), 400);
   },
   { deep: true },
@@ -116,16 +122,18 @@ function updateBill(patch: Partial<Bill> | ((prev: Bill) => Bill)): void {
   state.currentBill = next;
 }
 
-function persistBill(bill?: Bill): void {
+async function persistBill(bill?: Bill): Promise<void> {
   const b = bill ?? state.currentBill;
   if (!b) return;
   const toSave = { ...b };
   if (toSave.expiresAt < Date.now()) {
     toSave.expiresAt = Date.now() + DAY_MS;
   }
-  saveBill(toSave);
-  state.currentBill = toSave;
+  suppressDraftSave = true;
+  state.currentBill = await saveBill(toSave);
   saveDraft(null);
+  await nextTick();
+  suppressDraftSave = false;
 }
 
 function loadBillByCode(code: string): Bill | null {

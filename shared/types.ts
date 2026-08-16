@@ -131,5 +131,4 @@ export interface HistoryEntry {
   expiresAt: number;
   grandTotal: number;
   participantCount: number;
-  bill: Bill;
 }
