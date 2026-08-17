@@ -201,6 +201,24 @@ async function generateLink() {
   if (postFailed.value) await persistToServer();
   if (serverCode.value) shareOpen.value = true;
 }
+
+async function copyPersonalLink(pid: string) {
+  if (!serverCode.value) return;
+  const url = buildShareUrl(serverCode.value, pid);
+  try {
+    await navigator.clipboard.writeText(url);
+    toast(tr('linkCopied'), 'success');
+  } catch {
+    toast(url, 'info');
+  }
+}
+
+function sharePersonalWhatsApp(pid: string, name: string) {
+  if (!serverCode.value || !bill.value) return;
+  const url = buildShareUrl(serverCode.value, pid);
+  const text = `${bill.value.eventName || 'Split Bill'} — ${name}\n${url}`;
+  window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+}
 </script>
 
 <template>
@@ -416,6 +434,38 @@ async function generateLink() {
             <MessageCircle class="h-4 w-4" />
             {{ tr('shareWhatsApp') }}
           </Button>
+        </div>
+
+        <div v-if="bill.privacyMode === 'private'" class="flex flex-col gap-2 border-t border-neutral-200 pt-4 dark:border-neutral-800">
+          <p class="text-xs font-medium">{{ tr('personalLinks') }}</p>
+          <p class="text-[11px] text-neutral-400">{{ tr('personalLinksHint') }}</p>
+          <ul class="flex flex-col gap-1.5">
+            <li
+              v-for="p in bill.participants"
+              :key="p.id"
+              class="flex items-center justify-between gap-2 rounded-lg border border-neutral-200 px-2.5 py-2 dark:border-neutral-700"
+            >
+              <span class="min-w-0 flex-1 truncate text-sm font-medium">{{ p.name }}</span>
+              <div class="flex shrink-0 items-center gap-1">
+                <button
+                  type="button"
+                  class="rounded-lg p-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                  :aria-label="tr('copyLink')"
+                  @click="copyPersonalLink(p.id)"
+                >
+                  <Copy class="h-3.5 w-3.5" />
+                </button>
+                <button
+                  type="button"
+                  class="rounded-lg p-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                  :aria-label="tr('shareWhatsApp')"
+                  @click="sharePersonalWhatsApp(p.id, p.name)"
+                >
+                  <MessageCircle class="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </li>
+          </ul>
         </div>
       </div>
     </Modal>

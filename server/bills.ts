@@ -181,10 +181,6 @@ billsRoute.get('/:code', async (c) => {
     date: bill.date,
     expiresAt: bill.expiresAt,
     bankAccount: bill.bankAccount,
-    // Wajib dikirim meski hideParticipantNames aktif — penerima harus bisa
-    // memilih namanya sendiri dari daftar. Nominal tetap nol di sini, itu
-    // yang dijaga F13, bukan daftar nama ini. Lihat TSD §7.
-    participants: bill.participants.map((p) => ({ id: p.id, name: p.name })),
   };
 
   const participantId = c.req.query('p');
@@ -192,7 +188,14 @@ billsRoute.get('/:code', async (c) => {
     ? calculateBill(bill).perPerson.find((p) => p.participantId === participantId)
     : undefined;
 
-  return c.json(me ? { ...base, me } : base);
+  // Link personal (?p= valid) tidak pernah kirim daftar nama peserta lain — penerima
+  // sudah tahu siapa dirinya dari link-nya sendiri. Link dasar /s/:code (tanpa id, jalur
+  // lama) tetap kirim daftar nama supaya pemilihan manual masih berfungsi. Lihat TSD §7.
+  if (me) return c.json({ ...base, me });
+  return c.json({
+    ...base,
+    participants: bill.participants.map((p) => ({ id: p.id, name: p.name })),
+  });
 });
 
 billsRoute.post('/:code/pay', async (c) => {
