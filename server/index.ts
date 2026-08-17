@@ -34,14 +34,14 @@ let indexHtml: string;
  * TANPA nominal atau nama peserta — konsisten dengan TSD §7. */
 app.get('/s/:code/:pid?', async (c) => {
   const code = c.req.param('code');
-  let title = 'SplitBill — Bagi Tagihan Mudah';
+  let title = 'SplitBills — Bagi Tagihan Mudah';
   let description =
     'Bagi tagihan dengan mudah, cepat, dan adil. Scan struk, hitung split, bagikan link.';
 
   const result = await findActiveBill(code);
   if (result.ok) {
     const eventName = result.bill.eventName || 'Split Bill';
-    title = `${eventName} — SplitBill`;
+    title = `${eventName} — SplitBills`;
     if (result.bill.privacyMode === 'public') {
       const calc = calculateBill(result.bill);
       description = `Total ${formatCurrency(calc.grandTotal)} · ${result.bill.participants.length} orang. Buka untuk lihat rincian dan bayar.`;
@@ -59,8 +59,18 @@ app.get('/s/:code/:pid?', async (c) => {
     .replace(
       /<meta (name="description"|property="og:description") content=".*?" \/>/g,
       (_m, attr) => `<meta ${attr} content="${escapeHtml(description)}" />`,
-    );
+    )
+    // Halaman tagihan berisi nama peserta, nominal, dan nomor rekening orang sungguhan —
+    // tidak boleh masuk indeks mesin pencari. robots.txt sudah melarang crawl-nya; ini
+    // lapis kedua untuk kasus link terlanjur ditemukan crawler dari sumber lain.
+    .replace(
+      /<meta name="robots" content=".*?" \/>/,
+      '<meta name="robots" content="noindex, nofollow" />',
+    )
+    // Canonical bawaan menunjuk ke beranda; untuk halaman tagihan justru menyesatkan.
+    .replace(/<link rel="canonical" href=".*?" \/>\n?\s*/, '');
 
+  c.header('X-Robots-Tag', 'noindex, nofollow');
   return c.html(html);
 });
 

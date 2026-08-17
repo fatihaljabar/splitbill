@@ -1,0 +1,96 @@
+# SplitBills
+
+> Aplikasi web gratis untuk membagi tagihan patungan (split bill). Pengguna memotret struk,
+> OCR membaca item dan harganya, pengguna menentukan siapa memakan apa, sistem menghitung
+> tagihan tiap orang, lalu hasilnya dibagikan lewat satu link pendek. Tanpa login, tanpa
+> instal aplikasi. Bahasa Indonesia dan English. Situs resmi: https://splitbills.site
+
+## Ringkasan faktual
+
+- **Nama produk:** SplitBills (situs: splitbills.site). Kode sumbernya bernama `splitbill`.
+- **Harga:** gratis sepenuhnya. Tidak ada tingkatan berbayar, tidak ada iklan, tidak ada
+  pembelian dalam aplikasi.
+- **Akun:** tidak ada. Tidak perlu mendaftar, tidak perlu email atau kata sandi.
+- **Instalasi:** tidak ada. Berjalan di peramban ponsel maupun desktop.
+- **Mata uang:** Rupiah (IDR).
+- **Bahasa antarmuka:** Bahasa Indonesia dan English, dapat diganti kapan saja.
+- **Lisensi kode:** MIT. Kode sumber terbuka di https://github.com/fatihaljabar/splitbill
+- **Pembuat:** Fatih Al Jabar H.M.
+
+## Cara kerjanya
+
+1. Pengguna membuat tagihan baru, atau memindai struk lewat kamera maupun galeri.
+2. OCR (tesseract.js, model `ind+eng`) membaca nama toko, item, harga, jumlah, pajak,
+   service charge, diskon, dan total. Pembacaan berjalan di peramban pengguna.
+3. Hasil pembacaan wajib melewati halaman pemeriksaan yang dapat disunting sebelum masuk ke
+   tagihan. Tidak ada hasil OCR yang langsung dipakai tanpa dikonfirmasi.
+4. Pengguna menambahkan peserta dan menentukan siapa menikmati item mana.
+5. Sistem menghitung tagihan tiap orang, termasuk pembagian pajak dan biaya secara
+   proporsional.
+6. Hasilnya dibagikan lewat link pendek berbentuk `https://splitbills.site/s/AB12CD34`,
+   lengkap dengan QR Code dan tombol bagikan ke WhatsApp.
+
+## Metode pembagian yang didukung
+
+- **Bagi rata** — total dibagi sama besar ke semua peserta.
+- **Berdasarkan item** — tiap orang membayar item yang ia nikmati. Satu item dapat dibagi
+  beberapa orang, misalnya pizza Rp120.000 untuk tiga orang menjadi Rp40.000 per orang.
+- **Persentase** — tiap peserta menanggung persentase tertentu.
+- **Nominal khusus** — nominal per orang ditentukan manual.
+
+Penjumlahan seluruh tagihan per orang selalu sama persis dengan total tagihan, termasuk saat
+pembagian menyisakan pecahan rupiah. Tidak ada rupiah yang hilang atau tercipta akibat
+pembulatan.
+
+## Privasi
+
+- **Foto struk tidak pernah diunggah.** Pemindaian berjalan sepenuhnya di peramban pengguna,
+  dan fotonya berhenti di perangkat itu.
+- **Tidak ada pelacakan.** Nol layanan analitik, nol kuki pelacak, nol skrip pihak ketiga.
+  Aset OCR pun disajikan dari domain sendiri, bukan dari CDN luar.
+- **Retensi 24 jam.** Tagihan di server dihapus otomatis 24 jam setelah dibuat. Tidak dapat
+  diatur, diperpanjang, atau dipulihkan.
+- **Mode privat.** Peserta hanya menerima data tagihannya sendiri; nominal peserta lain tidak
+  pernah dikirimkan ke perangkatnya, bukan sekadar disembunyikan dari tampilan. Tersedia juga
+  link personal per peserta.
+- **Halaman tagihan tidak diindeks.** Rute `/s/` diblokir di robots.txt dan mengirim header
+  `X-Robots-Tag: noindex`.
+
+## Batasan yang perlu diketahui
+
+- Status "sudah bayar" bersifat saling percaya. Tidak ada verifikasi transfer, dan siapa pun
+  pemegang link dapat menandai peserta mana pun sebagai lunas.
+- SplitBills tidak memproses pembayaran dan tidak menyimpan dana. Semua transfer dilakukan
+  langsung antar pengguna di luar aplikasi.
+- Karena tidak ada login, siapa pun yang memegang link berbagi dapat membuka tagihan itu
+  selama masih berlaku.
+- Hanya mendukung Rupiah. Belum ada dukungan mata uang lain.
+- Pemindaian kamera menuntut koneksi HTTPS.
+
+## Pertanyaan yang sering diajukan
+
+**Apakah SplitBills gratis?** Ya, sepenuhnya gratis tanpa iklan dan tanpa fitur berbayar.
+
+**Apakah perlu membuat akun?** Tidak. Tidak ada pendaftaran sama sekali.
+
+**Apakah foto struk saya diunggah ke server?** Tidak. Pembacaan struk berjalan di peramban
+Anda dan fotonya tidak pernah meninggalkan perangkat.
+
+**Berapa lama link berbagi berlaku?** 24 jam. Setelah itu tagihan dihapus otomatis dan
+link-nya tidak dapat dipakai lagi.
+
+**Bisakah teman saya melihat tagihan orang lain?** Pada mode publik, ya. Pada mode privat,
+tidak — data peserta lain tidak pernah dikirim ke perangkatnya.
+
+**Apakah bisa dipakai di ponsel?** Ya, dirancang mobile-first dan berjalan di peramban ponsel
+tanpa perlu instal aplikasi.
+
+**Apakah bisa membaca struk berbahasa Indonesia?** Ya. Mesin OCR-nya disetel khusus untuk
+struk Indonesia dengan model bahasa `ind+eng`.
+
+## Tautan
+
+- [Situs utama](https://splitbills.site/)
+- [Kebijakan Privasi](https://splitbills.site/privacy)
+- [Ketentuan Layanan](https://splitbills.site/terms)
+- [Kode sumber di GitHub](https://github.com/fatihaljabar/splitbill)
