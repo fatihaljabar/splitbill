@@ -19,14 +19,14 @@ const privacyId: LegalDoc = {
   title: 'Kebijakan Privasi',
   updated: LAST_UPDATED_ID,
   intro:
-    'SplitBill dibuat supaya bisa dipakai tanpa menyerahkan data pribadi. Halaman ini menjelaskan persis apa yang disimpan, di mana, dan berapa lama.',
+    'SplitBills dibuat supaya bisa dipakai tanpa menyerahkan data pribadi. Halaman ini menjelaskan persis apa yang disimpan, di mana, dan berapa lama.',
   sections: [
     {
       heading: 'Yang tidak kami kumpulkan',
       body: [
         'Tidak ada akun, jadi tidak ada nama pengguna, email, atau kata sandi.',
         'Foto struk tidak pernah diunggah. Pembacaan struk berjalan sepenuhnya di peramban Anda, dan fotonya berhenti di perangkat Anda sendiri.',
-        'Tidak ada layanan analitik, kuki pelacak, atau skrip pihak ketiga. Aset pembaca struk pun disajikan dari domain SplitBill sendiri, bukan dari CDN luar.',
+        'Tidak ada layanan analitik, kuki pelacak, atau skrip pihak ketiga. Aset pembaca struk pun disajikan dari domain SplitBills sendiri, bukan dari CDN luar.',
       ],
     },
     {
@@ -72,14 +72,14 @@ const privacyEn: LegalDoc = {
   title: 'Privacy Policy',
   updated: LAST_UPDATED_EN,
   intro:
-    'SplitBill is built to be usable without handing over personal data. This page explains exactly what is stored, where, and for how long.',
+    'SplitBills is built to be usable without handing over personal data. This page explains exactly what is stored, where, and for how long.',
   sections: [
     {
       heading: 'What we do not collect',
       body: [
         'There are no accounts, so there are no usernames, emails, or passwords.',
         'Receipt photos are never uploaded. Scanning runs entirely in your browser, and the photo stays on your own device.',
-        'There is no analytics service, no tracking cookies, and no third-party scripts. Even the OCR assets are served from SplitBill’s own domain rather than an external CDN.',
+        'There is no analytics service, no tracking cookies, and no third-party scripts. Even the OCR assets are served from SplitBills’s own domain rather than an external CDN.',
       ],
     },
     {
@@ -125,12 +125,12 @@ const termsId: LegalDoc = {
   title: 'Ketentuan Layanan',
   updated: LAST_UPDATED_ID,
   intro:
-    'Dengan memakai SplitBill, Anda menyetujui ketentuan di bawah ini. Ketentuannya sengaja dibuat singkat dan jelas.',
+    'Dengan memakai SplitBills, Anda menyetujui ketentuan di bawah ini. Ketentuannya sengaja dibuat singkat dan jelas.',
   sections: [
     {
       heading: 'Layanan ini gratis dan apa adanya',
       body: [
-        'SplitBill disediakan gratis, tanpa jaminan apa pun, baik tersurat maupun tersirat. Layanan dapat berubah, terganggu, atau dihentikan kapan saja tanpa pemberitahuan.',
+        'SplitBills disediakan gratis, tanpa jaminan apa pun, baik tersurat maupun tersirat. Layanan dapat berubah, terganggu, atau dihentikan kapan saja tanpa pemberitahuan.',
         'Kami tidak bertanggung jawab atas kerugian yang timbul dari pemakaian atau ketidaktersediaan layanan ini.',
       ],
     },
@@ -144,7 +144,7 @@ const termsId: LegalDoc = {
     {
       heading: 'Tidak ada uang yang ditangani',
       body: [
-        'SplitBill tidak memproses pembayaran, tidak menyimpan dana, dan tidak terhubung dengan penyedia pembayaran mana pun. Semua transfer dilakukan langsung antar pengguna di luar layanan ini.',
+        'SplitBills tidak memproses pembayaran, tidak menyimpan dana, dan tidak terhubung dengan penyedia pembayaran mana pun. Semua transfer dilakukan langsung antar pengguna di luar layanan ini.',
         'Penanda "sudah bayar" bersifat saling percaya. Tidak ada verifikasi transfer, dan siapa pun yang memegang link dapat menandai peserta mana pun sebagai lunas.',
         'Nomor rekening yang Anda masukkan adalah tanggung jawab Anda sendiri, termasuk memastikan nomornya benar sebelum dibagikan.',
       ],
@@ -153,7 +153,7 @@ const termsId: LegalDoc = {
       heading: 'Data terhapus otomatis',
       body: [
         'Tagihan dihapus 24 jam setelah dibuat. Ini perilaku yang disengaja, bukan kegagalan sistem.',
-        'Jangan memakai SplitBill sebagai tempat penyimpanan catatan keuangan. Simpan sendiri salinan yang Anda butuhkan sebelum masa berlakunya habis, misalnya lewat tombol unduh gambar atau salin hasil.',
+        'Jangan memakai SplitBills sebagai tempat penyimpanan catatan keuangan. Simpan sendiri salinan yang Anda butuhkan sebelum masa berlakunya habis, misalnya lewat tombol unduh gambar atau salin hasil.',
       ],
     },
     {
@@ -167,7 +167,7 @@ const termsId: LegalDoc = {
     {
       heading: 'Kode sumber',
       body: [
-        'SplitBill bersumber terbuka di bawah Lisensi MIT. Anda bebas memakai, mengubah, dan menyebarkannya, termasuk untuk keperluan komersial, selama pemberitahuan hak cipta tetap disertakan.',
+        'SplitBills bersumber terbuka di bawah Lisensi MIT. Anda bebas memakai, mengubah, dan menyebarkannya, termasuk untuk keperluan komersial, selama pemberitahuan hak cipta tetap disertakan.',
       ],
     },
   ],
@@ -176,12 +176,12 @@ const termsId: LegalDoc = {
 const termsEn: LegalDoc = {
   title: 'Terms of Service',
   updated: LAST_UPDATED_EN,
-  intro: 'By using SplitBill you agree to the terms below. They are deliberately short and plain.',
+  intro: 'By using SplitBills you agree to the terms below. They are deliberately short and plain.',
   sections: [
     {
       heading: 'The service is free and provided as-is',
       body: [
-        'SplitBill is provided free of charge, without warranty of any kind, express or implied. The service may change, break, or be discontinued at any time without notice.',
+        'SplitBills is provided free of charge, without warranty of any kind, express or implied. The service may change, break, or be discontinued at any time without notice.',
         'We are not liable for any loss arising from using this service or from it being unavailable.',
       ],
     },
@@ -195,7 +195,7 @@ const termsEn: LegalDoc = {
     {
       heading: 'No money is handled',
       body: [
-        'SplitBill does not process payments, hold funds, or connect to any payment provider. All transfers happen directly between users, outside this service.',
+        'SplitBills does not process payments, hold funds, or connect to any payment provider. All transfers happen directly between users, outside this service.',
         'The "paid" marker is based on mutual trust. There is no transfer verification, and anyone holding the link can mark any participant as paid.',
         'Bank account details you enter are your own responsibility, including making sure the number is correct before sharing it.',
       ],
@@ -204,7 +204,7 @@ const termsEn: LegalDoc = {
       heading: 'Data is deleted automatically',
       body: [
         'Bills are deleted 24 hours after creation. This is intended behaviour, not a system failure.',
-        'Do not use SplitBill as a place to keep financial records. Save whatever you need before a bill expires, for example with the download-image or copy-result buttons.',
+        'Do not use SplitBills as a place to keep financial records. Save whatever you need before a bill expires, for example with the download-image or copy-result buttons.',
       ],
     },
     {
@@ -218,7 +218,7 @@ const termsEn: LegalDoc = {
     {
       heading: 'Source code',
       body: [
-        'SplitBill is open source under the MIT License. You are free to use, modify, and distribute it, including commercially, as long as the copyright notice is kept.',
+        'SplitBills is open source under the MIT License. You are free to use, modify, and distribute it, including commercially, as long as the copyright notice is kept.',
       ],
     },
   ],

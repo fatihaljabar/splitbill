@@ -17,9 +17,10 @@ import { formatCurrency, formatDate } from '../../shared/format.ts';
 import Button from '../components/ui/Button.vue';
 import Modal from '../components/ui/Modal.vue';
 import { useApp } from '../composables/useApp';
+import { faqItems } from '../i18n/faq.ts';
 import { clearHistory, deleteHistoryEntry, loadBill, loadHistory } from '../lib/storage.ts';
 
-const { tr, createEmptyBill, setCurrentBill, toast } = useApp();
+const { tr, state, createEmptyBill, setCurrentBill, toast } = useApp();
 const router = useRouter();
 
 const tick = ref(0);
@@ -35,6 +36,8 @@ const steps = computed(() => [
   { n: '02', title: tr('step2Title'), desc: tr('step2Desc') },
   { n: '03', title: tr('step3Title'), desc: tr('step3Desc') },
 ]);
+
+const faq = computed(() => faqItems(state.lang));
 
 const features = computed(() => [
   { icon: Camera, title: tr('scanReceipt'), desc: tr('feature1') },
@@ -236,6 +239,20 @@ function confirmClearAll() {
           </div>
         </li>
       </ul>
+    </section>
+
+    <section class="flex flex-col gap-2.5 sm:gap-3">
+      <h2 class="text-base font-semibold tracking-tight sm:text-lg">{{ tr('faqTitle') }}</h2>
+      <div class="grid grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-3">
+        <div
+          v-for="item in faq"
+          :key="item.q"
+          class="rounded-2xl border border-neutral-200/80 bg-white p-3.5 sm:p-4 dark:border-neutral-800 dark:bg-neutral-900"
+        >
+          <h3 class="text-sm font-medium">{{ item.q }}</h3>
+          <p class="mt-1 text-xs leading-relaxed text-neutral-500">{{ item.a }}</p>
+        </div>
+      </div>
     </section>
 
     <div class="shrink-0 pt-1 text-center text-[11px] text-neutral-400 sm:text-xs">
