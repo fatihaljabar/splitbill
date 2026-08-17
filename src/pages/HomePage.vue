@@ -238,7 +238,18 @@ function confirmClearAll() {
       </ul>
     </section>
 
-    <p class="shrink-0 pt-1 text-center text-[11px] text-neutral-400 sm:text-xs">{{ tr('footer') }}</p>
+    <div class="shrink-0 pt-1 text-center text-[11px] text-neutral-400 sm:text-xs">
+      <p>{{ tr('footer') }}</p>
+      <p class="mt-1 flex items-center justify-center gap-2">
+        <RouterLink to="/privacy" class="hover:text-neutral-600 dark:hover:text-neutral-300">
+          {{ tr('privacyPolicy') }}
+        </RouterLink>
+        <span aria-hidden="true">·</span>
+        <RouterLink to="/terms" class="hover:text-neutral-600 dark:hover:text-neutral-300">
+          {{ tr('termsOfService') }}
+        </RouterLink>
+      </p>
+    </div>
 
     <Modal :open="confirmClear" :title="tr('confirmDelete')" @close="confirmClear = false">
       <div class="flex flex-col gap-4">
