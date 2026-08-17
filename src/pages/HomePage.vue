@@ -38,6 +38,10 @@ const steps = computed(() => [
 ]);
 
 const faq = computed(() => faqItems(state.lang));
+const openFaq = ref<number | null>(null);
+function toggleFaq(i: number) {
+  openFaq.value = openFaq.value === i ? null : i;
+}
 
 const features = computed(() => [
   { icon: Camera, title: tr('scanReceipt'), desc: tr('feature1') },
@@ -243,14 +247,26 @@ function confirmClearAll() {
 
     <section class="flex flex-col gap-2.5 sm:gap-3">
       <h2 class="text-base font-semibold tracking-tight sm:text-lg">{{ tr('faqTitle') }}</h2>
-      <div class="grid grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-3">
+      <div class="flex flex-col gap-2">
         <div
-          v-for="item in faq"
+          v-for="(item, i) in faq"
           :key="item.q"
-          class="rounded-2xl border border-neutral-200/80 bg-white p-3.5 sm:p-4 dark:border-neutral-800 dark:bg-neutral-900"
+          class="overflow-hidden rounded-2xl border border-neutral-200/80 bg-white dark:border-neutral-800 dark:bg-neutral-900"
         >
-          <h3 class="text-sm font-medium">{{ item.q }}</h3>
-          <p class="mt-1 text-xs leading-relaxed text-neutral-500">{{ item.a }}</p>
+          <button
+            type="button"
+            class="flex w-full items-center justify-between gap-3 p-3.5 text-left sm:p-4"
+            :aria-expanded="openFaq === i"
+            @click="toggleFaq(i)"
+          >
+            <h3 class="text-sm font-medium">{{ item.q }}</h3>
+            <ChevronRight
+              :class="`h-4 w-4 shrink-0 text-neutral-400 transition-transform ${openFaq === i ? 'rotate-90' : ''}`"
+            />
+          </button>
+          <div v-show="openFaq === i" class="px-3.5 pb-3.5 sm:px-4 sm:pb-4">
+            <p class="text-xs leading-relaxed text-neutral-500">{{ item.a }}</p>
+          </div>
         </div>
       </div>
     </section>
