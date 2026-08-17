@@ -31,8 +31,9 @@ async function mergePayments(bill: Bill, code: string): Promise<Bill> {
 }
 
 /** Cari bill aktif per kode. Baris yang sudah lewat masa berlaku dihapus di sini juga —
- * dipakai bersama GET /:code dan POST /:code/pay, keduanya butuh perilaku yang sama. */
-async function findActiveBill(code: string): Promise<ActiveBillResult> {
+ * dipakai bersama GET /:code, POST /:code/pay, dan suntikan meta OG di index.ts, ketiganya
+ * butuh perilaku yang sama. */
+export async function findActiveBill(code: string): Promise<ActiveBillResult> {
   const [row] = await db.select().from(bills).where(eq(bills.shortCode, code));
   if (!row) return { ok: false, error: 'not_found' };
 

@@ -1,15 +1,71 @@
+import { readFile } from 'node:fs/promises';
 import { serve } from '@hono/node-server';
 import { serveStatic } from '@hono/node-server/serve-static';
 import { Hono } from 'hono';
-import { billsRoute } from './bills.ts';
+import { calculateBill } from '../shared/calculate.ts';
+import { formatCurrency } from '../shared/format.ts';
+import { billsRoute, findActiveBill } from './bills.ts';
 import { runMigrations } from './db.ts';
 
 const app = new Hono();
 
 app.route('/api/bills', billsRoute);
 
-// Urutan wajib: /api/* dulu, baru statis, baru catch-all. Tanpa catch-all,
-// membuka /s/AB12CD34 langsung (bukan lewat navigasi client-side) akan 404 —
+const HTML_ESCAPES: Record<string, string> = {
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&#39;',
+};
+
+function escapeHtml(s: string): string {
+  return s.replace(/[&<>"']/g, (c) => HTML_ESCAPES[c] ?? c);
+}
+
+// dist/index.html dibaca sekali saat start, bukan tiap request — isinya statis
+// hasil build, cuma <title>/<meta> yang disuntik per request di bawah.
+let indexHtml: string;
+
+/** WhatsApp (dan pratinjau link lain) tidak menjalankan JS — mereka baca <meta> dari HTML
+ * mentah sebelum SPA Vue sempat mengambil alih DOM. Rute ini menyuntik og:title/
+ * og:description per bill, jadi kartu pratinjau di WhatsApp menampilkan nama acara
+ * sungguhan, bukan judul generik. Privasi dijaga: bill privat cuma tampilkan nama acara,
+ * TANPA nominal atau nama peserta — konsisten dengan TSD §7. */
+app.get('/s/:code/:pid?', async (c) => {
+  const code = c.req.param('code');
+  let title = 'SplitBill — Bagi Tagihan Mudah';
+  let description =
+    'Bagi tagihan dengan mudah, cepat, dan adil. Scan struk, hitung split, bagikan link.';
+
+  const result = await findActiveBill(code);
+  if (result.ok) {
+    const eventName = result.bill.eventName || 'Split Bill';
+    title = `${eventName} — SplitBill`;
+    if (result.bill.privacyMode === 'public') {
+      const calc = calculateBill(result.bill);
+      description = `Total ${formatCurrency(calc.grandTotal)} · ${result.bill.participants.length} orang. Buka untuk lihat rincian dan bayar.`;
+    } else {
+      description = 'Buka link ini untuk lihat tagihanmu dan bayar.';
+    }
+  }
+
+  const html = indexHtml
+    .replace(/<title>.*?<\/title>/, `<title>${escapeHtml(title)}</title>`)
+    .replace(
+      /<meta property="og:title" content=".*?" \/>/,
+      `<meta property="og:title" content="${escapeHtml(title)}" />`,
+    )
+    .replace(
+      /<meta (name="description"|property="og:description") content=".*?" \/>/g,
+      (_m, attr) => `<meta ${attr} content="${escapeHtml(description)}" />`,
+    );
+
+  return c.html(html);
+});
+
+// Urutan wajib: /api/* dan /s/:code dulu, baru statis, baru catch-all. Tanpa catch-all,
+// membuka rute lain langsung (bukan lewat navigasi client-side) akan 404 —
 // ini yang membuat mode history router bekerja.
 app.use('/*', serveStatic({ root: './dist' }));
 app.get('*', serveStatic({ path: './dist/index.html' }));
@@ -19,6 +75,7 @@ app.get('*', serveStatic({ path: './dist/index.html' }));
 // await di level atas modul — proses gagal start sama sekali kalau ada.
 async function main(): Promise<void> {
   await runMigrations();
+  indexHtml = await readFile('./dist/index.html', 'utf-8');
   const port = Number(process.env.PORT) || 3000;
   serve({ fetch: app.fetch, port });
   console.log(`splitbill server listening on :${port}`);
