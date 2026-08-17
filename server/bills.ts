@@ -31,8 +31,9 @@ async function mergePayments(bill: Bill, code: string): Promise<Bill> {
 }
 
 /** Cari bill aktif per kode. Baris yang sudah lewat masa berlaku dihapus di sini juga —
- * dipakai bersama GET /:code dan POST /:code/pay, keduanya butuh perilaku yang sama. */
-async function findActiveBill(code: string): Promise<ActiveBillResult> {
+ * dipakai bersama GET /:code, POST /:code/pay, dan suntikan meta OG di index.ts, ketiganya
+ * butuh perilaku yang sama. */
+export async function findActiveBill(code: string): Promise<ActiveBillResult> {
   const [row] = await db.select().from(bills).where(eq(bills.shortCode, code));
   if (!row) return { ok: false, error: 'not_found' };
 
@@ -181,10 +182,6 @@ billsRoute.get('/:code', async (c) => {
     date: bill.date,
     expiresAt: bill.expiresAt,
     bankAccount: bill.bankAccount,
-    // Wajib dikirim meski hideParticipantNames aktif — penerima harus bisa
-    // memilih namanya sendiri dari daftar. Nominal tetap nol di sini, itu
-    // yang dijaga F13, bukan daftar nama ini. Lihat TSD §7.
-    participants: bill.participants.map((p) => ({ id: p.id, name: p.name })),
   };
 
   const participantId = c.req.query('p');
@@ -192,7 +189,14 @@ billsRoute.get('/:code', async (c) => {
     ? calculateBill(bill).perPerson.find((p) => p.participantId === participantId)
     : undefined;
 
-  return c.json(me ? { ...base, me } : base);
+  // Link personal (?p= valid) tidak pernah kirim daftar nama peserta lain — penerima
+  // sudah tahu siapa dirinya dari link-nya sendiri. Link dasar /s/:code (tanpa id, jalur
+  // lama) tetap kirim daftar nama supaya pemilihan manual masih berfungsi. Lihat TSD §7.
+  if (me) return c.json({ ...base, me });
+  return c.json({
+    ...base,
+    participants: bill.participants.map((p) => ({ id: p.id, name: p.name })),
+  });
 });
 
 billsRoute.post('/:code/pay', async (c) => {

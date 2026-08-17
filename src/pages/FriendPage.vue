@@ -25,6 +25,7 @@ const router = useRouter();
 const { tr, toast } = useApp();
 
 const code = route.params.code as string;
+const pid = route.params.pid as string | undefined;
 const loading = ref(true);
 const expired = ref(false);
 const notFound = ref(false);
@@ -78,7 +79,7 @@ onMounted(async () => {
   }
 
   try {
-    const res = await fetchBill(code);
+    const res = await fetchBill(code, pid);
     if (res.mode === 'public') {
       isPrivate.value = false;
       display.value = {
@@ -90,6 +91,8 @@ onMounted(async () => {
       };
       participants.value = res.bill.participants.map((p) => ({ id: p.id, name: p.name }));
       calc.value = res.calc;
+      if (pid) selectPerson(pid);
+      else restoreSelection();
     } else {
       isPrivate.value = true;
       display.value = {
@@ -99,9 +102,17 @@ onMounted(async () => {
         expiresAt: res.expiresAt,
         bankAccount: res.bankAccount,
       };
-      participants.value = res.participants;
+      if (res.me) {
+        // Link personal (?p= sudah divalidasi server) — daftar nama peserta lain
+        // sengaja tidak pernah dikirim untuk jalur ini, lihat server/bills.ts.
+        me.value = res.me;
+        selectedId.value = pid ?? null;
+        if (pid) localStorage.setItem(`splitbill_self_${code}`, pid);
+      } else {
+        participants.value = res.participants ?? [];
+        restoreSelection();
+      }
     }
-    restoreSelection();
   } catch (e) {
     if (e instanceof Error && e.message === 'expired') {
       expired.value = true;

@@ -20,7 +20,7 @@ export function decodeBill(payload: string): Bill | null {
   }
 }
 
-export function buildShareUrl(shortCode: string): string {
+export function buildShareUrl(shortCode: string, participantId?: string): string {
   const origin = typeof window === 'undefined' ? '' : window.location.origin;
-  return `${origin}/s/${shortCode}`;
+  return participantId ? `${origin}/s/${shortCode}/${participantId}` : `${origin}/s/${shortCode}`;
 }

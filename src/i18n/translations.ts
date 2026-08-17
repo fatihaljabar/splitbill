@@ -109,6 +109,9 @@ const id = {
   shareLink: 'Link Berbagi',
   copyLink: 'Salin Link',
   shareWhatsApp: 'Bagikan ke WhatsApp',
+  personalLinks: 'Link Personal per Peserta',
+  personalLinksHint:
+    'Mode privat aktif — kirim link masing-masing supaya nominal peserta lain tidak terlihat.',
   qrCode: 'QR Code',
   expiresIn: 'Berlaku hingga',
   expired: 'Kedaluwarsa',
@@ -438,6 +441,9 @@ const en: typeof id = {
   shareLink: 'Share Link',
   copyLink: 'Copy Link',
   shareWhatsApp: 'Share to WhatsApp',
+  personalLinks: 'Personal Links per Participant',
+  personalLinksHint:
+    "Private mode is on — send each person their own link so they can't see anyone else's amount.",
   qrCode: 'QR Code',
   expiresIn: 'Valid until',
   expired: 'Expired',

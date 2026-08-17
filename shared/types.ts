@@ -117,7 +117,10 @@ export interface PrivateBillResponse {
   date?: string;
   expiresAt: number;
   bankAccount: BankAccount;
-  participants: Array<{ id: string; name: string }>;
+  // Cuma dikirim saat link personal (?p=) TIDAK dipakai — penerima lewat link dasar
+  // /s/:code perlu memilih namanya dari daftar. Link personal /s/:code/:pid langsung
+  // membawa `me`, jadi nama peserta lain tidak pernah ikut terkirim (privasi penuh F13).
+  participants?: Array<{ id: string; name: string }>;
   me?: PersonBreakdown;
 }
 
