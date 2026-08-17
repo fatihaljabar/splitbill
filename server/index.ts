@@ -17,10 +17,11 @@ const HTML_ESCAPES: Record<string, string> = {
   '>': '&gt;',
   '"': '&quot;',
   "'": '&#39;',
+  '`': '&#96;',
 };
 
 function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (c) => HTML_ESCAPES[c] ?? c);
+  return s.replace(/[&<>"'`]/g, (c) => HTML_ESCAPES[c] ?? c);
 }
 
 // dist/index.html dibaca sekali saat start, bukan tiap request — isinya statis
@@ -51,10 +52,15 @@ app.get('/s/:code/:pid?', async (c) => {
   }
 
   const html = indexHtml
-    .replace(/<title>.*?<\/title>/, `<title>${escapeHtml(title)}</title>`)
+    // String replacement (bukan fungsi) di sini akan memicu ekspansi pola $ dari
+    // Replacement Text milik String.replace ($&, $`, $', dst) — eventName sepenuhnya
+    // dikendalikan pengguna (POST /api/bills tanpa autentikasi), dan escapeHtml() tidak
+    // pernah dirancang untuk menetralkan pola itu. Selalu bungkus jadi fungsi supaya
+    // nilainya disisipkan apa adanya.
+    .replace(/<title>.*?<\/title>/, () => `<title>${escapeHtml(title)}</title>`)
     .replace(
       /<meta property="og:title" content=".*?" \/>/,
-      `<meta property="og:title" content="${escapeHtml(title)}" />`,
+      () => `<meta property="og:title" content="${escapeHtml(title)}" />`,
     )
     .replace(
       /<meta (name="description"|property="og:description") content=".*?" \/>/g,
