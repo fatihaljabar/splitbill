@@ -7,6 +7,8 @@ const routes: RouteRecordRaw[] = [
   { path: '/review', component: () => import('./pages/ReviewPage.vue') },
   { path: '/results', component: () => import('./pages/ResultsPage.vue') },
   { path: '/s/:code/:pid?', component: () => import('./pages/FriendPage.vue') },
+  { path: '/privacy', component: () => import('./pages/LegalPage.vue') },
+  { path: '/terms', component: () => import('./pages/LegalPage.vue') },
   { path: '/:pathMatch(.*)*', redirect: '/' },
 ];
 

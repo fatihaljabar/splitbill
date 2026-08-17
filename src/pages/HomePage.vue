@@ -17,9 +17,10 @@ import { formatCurrency, formatDate } from '../../shared/format.ts';
 import Button from '../components/ui/Button.vue';
 import Modal from '../components/ui/Modal.vue';
 import { useApp } from '../composables/useApp';
+import { faqItems } from '../i18n/faq.ts';
 import { clearHistory, deleteHistoryEntry, loadBill, loadHistory } from '../lib/storage.ts';
 
-const { tr, createEmptyBill, setCurrentBill, toast } = useApp();
+const { tr, state, createEmptyBill, setCurrentBill, toast } = useApp();
 const router = useRouter();
 
 const tick = ref(0);
@@ -35,6 +36,12 @@ const steps = computed(() => [
   { n: '02', title: tr('step2Title'), desc: tr('step2Desc') },
   { n: '03', title: tr('step3Title'), desc: tr('step3Desc') },
 ]);
+
+const faq = computed(() => faqItems(state.lang));
+const openFaq = ref<number | null>(null);
+function toggleFaq(i: number) {
+  openFaq.value = openFaq.value === i ? null : i;
+}
 
 const features = computed(() => [
   { icon: Camera, title: tr('scanReceipt'), desc: tr('feature1') },
@@ -238,7 +245,44 @@ function confirmClearAll() {
       </ul>
     </section>
 
-    <p class="shrink-0 pt-1 text-center text-[11px] text-neutral-400 sm:text-xs">{{ tr('footer') }}</p>
+    <section class="flex flex-col gap-2.5 sm:gap-3">
+      <h2 class="text-base font-semibold tracking-tight sm:text-lg">{{ tr('faqTitle') }}</h2>
+      <div class="flex flex-col gap-2">
+        <div
+          v-for="(item, i) in faq"
+          :key="item.q"
+          class="overflow-hidden rounded-2xl border border-neutral-200/80 bg-white dark:border-neutral-800 dark:bg-neutral-900"
+        >
+          <button
+            type="button"
+            class="flex w-full items-center justify-between gap-3 p-3.5 text-left sm:p-4"
+            :aria-expanded="openFaq === i"
+            @click="toggleFaq(i)"
+          >
+            <h3 class="text-sm font-medium">{{ item.q }}</h3>
+            <ChevronRight
+              :class="`h-4 w-4 shrink-0 text-neutral-400 transition-transform ${openFaq === i ? 'rotate-90' : ''}`"
+            />
+          </button>
+          <div v-show="openFaq === i" class="px-3.5 pb-3.5 sm:px-4 sm:pb-4">
+            <p class="text-xs leading-relaxed text-neutral-500">{{ item.a }}</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="shrink-0 pt-1 text-center text-[11px] text-neutral-400 sm:text-xs">
+      <p>{{ tr('footer') }}</p>
+      <p class="mt-1 flex items-center justify-center gap-2">
+        <RouterLink to="/privacy" class="hover:text-neutral-600 dark:hover:text-neutral-300">
+          {{ tr('privacyPolicy') }}
+        </RouterLink>
+        <span aria-hidden="true">·</span>
+        <RouterLink to="/terms" class="hover:text-neutral-600 dark:hover:text-neutral-300">
+          {{ tr('termsOfService') }}
+        </RouterLink>
+      </p>
+    </div>
 
     <Modal :open="confirmClear" :title="tr('confirmDelete')" @close="confirmClear = false">
       <div class="flex flex-col gap-4">

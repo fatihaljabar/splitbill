@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Languages, Moon, Receipt, Sun } from 'lucide-vue-next';
+import { Languages, Moon, Sun } from 'lucide-vue-next';
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { useApp } from '../composables/useApp';
@@ -23,11 +23,13 @@ const isScan = computed(() => route.path === '/scan');
     >
       <div class="app-shell flex h-12 items-center justify-between sm:h-14 md:h-16">
         <RouterLink to="/" class="flex min-w-0 items-center gap-2 sm:gap-2.5">
-          <span
-            class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-neutral-900 text-white sm:h-9 sm:w-9 dark:bg-white dark:text-neutral-900"
-          >
-            <Receipt class="h-4 w-4" :stroke-width="2" />
-          </span>
+          <img
+            src="/logo.png"
+            alt=""
+            width="36"
+            height="36"
+            class="h-8 w-8 shrink-0 rounded-xl sm:h-9 sm:w-9"
+          />
           <span class="truncate text-sm font-semibold tracking-tight sm:text-[15px]">{{
             tr('appName')
           }}</span>

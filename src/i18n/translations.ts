@@ -1,7 +1,7 @@
 import type { Lang } from '../../shared/types.ts';
 
 const id = {
-  appName: 'SplitBill',
+  appName: 'SplitBills',
   tagline: 'Bagi tagihan dengan mudah, cepat, dan adil',
   createBill: 'Buat Bill Baru',
   scanReceipt: 'Scan Struk',
@@ -182,7 +182,10 @@ const id = {
   feature4: 'Tanpa akun, data di browser',
   getStarted: 'Mulai Sekarang',
   seeHow: 'Lihat Cara Kerja',
-  footer: 'SplitBill — Bagi tagihan tanpa ribet',
+  footer: 'SplitBills — Bagi tagihan tanpa ribet',
+  faqTitle: 'Pertanyaan Umum',
+  privacyPolicy: 'Kebijakan Privasi',
+  termsOfService: 'Ketentuan Layanan',
   nameRequired: 'Nama wajib diisi',
   priceRequired: 'Harga wajib diisi',
   atLeastOnePerson: 'Pilih minimal satu orang',
@@ -333,7 +336,7 @@ const id = {
 };
 
 const en: typeof id = {
-  appName: 'SplitBill',
+  appName: 'SplitBills',
   tagline: 'Split bills easily, quickly, and fairly',
   createBill: 'Create New Bill',
   scanReceipt: 'Scan Receipt',
@@ -514,7 +517,10 @@ const en: typeof id = {
   feature4: 'No account, data stays in browser',
   getStarted: 'Get Started',
   seeHow: 'See How It Works',
-  footer: 'SplitBill — Effortless bill splitting',
+  footer: 'SplitBills — Effortless bill splitting',
+  faqTitle: 'Frequently Asked Questions',
+  privacyPolicy: 'Privacy Policy',
+  termsOfService: 'Terms of Service',
   nameRequired: 'Name is required',
   priceRequired: 'Price is required',
   atLeastOnePerson: 'Select at least one person',
