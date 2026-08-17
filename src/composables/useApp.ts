@@ -67,6 +67,12 @@ watch(
   ([lang, theme]) => {
     document.documentElement.classList.toggle('dark', theme === 'dark');
     document.documentElement.lang = lang;
+    // Halaman /s/:code punya judul per-bill yang disuntik server (nama acara
+    // sungguhan) — jangan ditimpa dengan judul generik saat bahasa di-ganti di
+    // sana. Halaman lain pakai judul generik yang ikut bahasa yang dipilih.
+    if (!window.location.pathname.startsWith('/s/')) {
+      document.title = t(lang, 'pageTitle');
+    }
     saveSettings({ lang, theme });
   },
   { immediate: true },
