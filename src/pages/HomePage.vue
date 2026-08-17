@@ -125,7 +125,7 @@ function confirmClearAll() {
         <p class="text-sm font-medium text-neutral-900 dark:text-white">{{ tr('howItWorks') }}</p>
         <ol class="mt-3 space-y-3">
           <li v-for="s in steps" :key="s.n" class="flex gap-3">
-            <span class="text-sm font-semibold tabular-nums text-neutral-300 dark:text-neutral-600">{{
+            <span class="text-sm font-semibold tabular-nums text-neutral-500 dark:text-neutral-400">{{
               s.n
             }}</span>
             <div class="min-w-0">
@@ -163,7 +163,7 @@ function confirmClearAll() {
           :key="s.n"
           class="flex gap-3 rounded-2xl border border-neutral-200/80 bg-white p-3.5 sm:flex-col sm:gap-2 sm:p-4 dark:border-neutral-800 dark:bg-neutral-900"
         >
-          <span class="shrink-0 text-sm font-semibold tabular-nums text-neutral-300 dark:text-neutral-600">{{
+          <span class="shrink-0 text-sm font-semibold tabular-nums text-neutral-500 dark:text-neutral-400">{{
             s.n
           }}</span>
           <div class="min-w-0">
@@ -271,7 +271,7 @@ function confirmClearAll() {
       </div>
     </section>
 
-    <div class="shrink-0 pt-1 text-center text-[11px] text-neutral-400 sm:text-xs">
+    <div class="shrink-0 pt-1 text-center text-[11px] text-neutral-500 dark:text-neutral-400 sm:text-xs">
       <p>{{ tr('footer') }}</p>
       <p class="mt-1 flex items-center justify-center gap-2">
         <RouterLink to="/privacy" class="hover:text-neutral-600 dark:hover:text-neutral-300">
