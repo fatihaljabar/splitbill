@@ -82,8 +82,34 @@ npm run dev:server   # backend with --watch
 npm run build        # type-check frontend + server, then build
 npm start            # run the production build
 npm test             # unit tests for the shared calculation layer
+npm run test:e2e     # Playwright end-to-end tests
 npm run lint         # biome check
 npm run format       # biome check --write
+```
+
+## Testing
+
+Two layers, each covering what the other cannot.
+
+`npm test` runs the money logic in `shared/calculate.ts` under `node --test` — no dependencies,
+no browser. It covers the cases where rounding could lose or invent a rupiah.
+
+`npm run test:e2e` drives a real browser through the whole flow with Playwright: create a bill,
+add participants, assign items per person, calculate, mint a short link, then open that link in
+a separate browser context — a different device with none of the creator's local state — and
+mark it paid. It also asserts on raw API payloads that private bills never send other
+participants' amounts, that a payment for someone who is not on the bill is rejected, and that
+short codes are unique and unpredictable.
+
+The suite runs against the production server, not the Vite dev server, because `npm run dev`
+does not proxy `/api/*` — and because the two properties worth proving (money is computed
+server-side, payment status crosses devices) do not exist without a real backend. Playwright
+builds and starts that server itself, so a reachable MySQL from `DATABASE_URL` is the only
+prerequisite:
+
+```bash
+npx playwright install chromium   # once
+npm run test:e2e
 ```
 
 ## Deployment
