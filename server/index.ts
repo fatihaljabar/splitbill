@@ -83,7 +83,22 @@ app.get('/s/:code/:pid?', async (c) => {
 // Urutan wajib: /api/* dan /s/:code dulu, baru statis, baru catch-all. Tanpa catch-all,
 // membuka rute lain langsung (bukan lewat navigasi client-side) akan 404 —
 // ini yang membuat mode history router bekerja.
-app.use('/*', serveStatic({ root: './dist' }));
+app.use(
+  '/*',
+  serveStatic({
+    root: './dist',
+    // /assets/* dari Vite dan /fonts/* selalu sama isinya untuk nama file yang sama —
+    // /assets/* karena nama filenya sudah di-hash per isi, /fonts/* karena aset statis
+    // yang tidak pernah diganti tanpa ganti nama. Aman di-cache lama tanpa risiko basi;
+    // PageSpeed Insights menandai ini (durasi cache tidak efisien, ~219 KiB per kunjungan
+    // ulang) karena sebelumnya sama sekali tidak ada Cache-Control di file statis.
+    onFound: (path, c) => {
+      if (path.startsWith('dist/assets/') || path.startsWith('dist/fonts/')) {
+        c.header('Cache-Control', 'public, max-age=31536000, immutable');
+      }
+    },
+  }),
+);
 app.get('*', serveStatic({ path: './dist/index.html' }));
 
 // Tanpa top-level await: Hostinger memuat entry point ini lewat require()
