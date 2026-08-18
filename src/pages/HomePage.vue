@@ -193,7 +193,7 @@ function confirmClearAll() {
       >
         <Clock class="h-7 w-7 text-neutral-300 dark:text-neutral-600" />
         <p class="text-sm font-medium text-neutral-600 dark:text-neutral-300">{{ tr('noHistory') }}</p>
-        <p class="text-xs text-neutral-400">{{ tr('noHistoryDesc') }}</p>
+        <p class="text-xs text-neutral-500 dark:text-neutral-400">{{ tr('noHistoryDesc') }}</p>
       </div>
 
       <ul v-else class="grid min-h-0 grid-cols-1 gap-2 overflow-y-auto md:grid-cols-2 lg:gap-3">
