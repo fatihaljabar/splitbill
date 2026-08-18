@@ -41,10 +41,15 @@ export function uid(): string {
 }
 
 export function shortCode(length = 8): string {
+  // Math.random() (V8 xorshift128+) is not cryptographically secure, and this code is the
+  // sole access control for a bill with no login — crypto.getRandomValues is available in
+  // both the browser and Node 24 without an import.
   const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  const bytes = new Uint32Array(length);
+  crypto.getRandomValues(bytes);
   let result = '';
   for (let i = 0; i < length; i++) {
-    result += chars[Math.floor(Math.random() * chars.length)];
+    result += chars[bytes[i] % chars.length];
   }
   return result;
 }
