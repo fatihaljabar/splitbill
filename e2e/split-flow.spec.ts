@@ -39,17 +39,31 @@ async function addItem(
   await expect(modal).toBeHidden();
 }
 
-/** Reads the short code out of the share link the results page renders. */
+/** Reads the share link off the results page, asserting the shape PRD F11 requires. */
 async function readShortCode(page: Page): Promise<string> {
   const link = page.getByText(/\/s\/[A-Za-z0-9]+/).first();
   await expect(link).toBeVisible();
   const text = (await link.textContent()) ?? '';
+
+  // F11: the link must be short because the bill lives on the server. The old
+  // prototype packed the whole bill into a `?d=` payload, which is exactly the
+  // privacy leak the backend was built to remove — so it must never come back.
+  expect(text, 'share link must not carry bill data').not.toContain('?d=');
+
   const match = text.match(/\/s\/([A-Za-z0-9]+)/);
   expect(match, `no short link found in ${text}`).not.toBeNull();
   return (match as RegExpMatchArray)[1];
 }
 
 test('splits a bill and settles it across two devices', async ({ page, browser, request }) => {
+  // A silent exception mid-flow can still leave the happy path looking green,
+  // so failures are collected here and asserted at the end.
+  const pageErrors: string[] = [];
+  page.on('console', (msg) => {
+    if (msg.type() === 'error') pageErrors.push(msg.text());
+  });
+  page.on('pageerror', (err) => pageErrors.push(`pageerror: ${err.message}`));
+
   // --- the bill creator ---
   await page.goto('/');
   await page.getByRole('button', { name: 'Buat Bill Baru' }).click();
@@ -127,6 +141,8 @@ test('splits a bill and settles it across two devices', async ({ page, browser, 
     .toBe('paid');
 
   await friendContext.close();
+
+  expect(pageErrors, 'the flow should complete without console or page errors').toEqual([]);
 });
 
 test('mints unpredictable short codes', async ({ request }) => {
