@@ -12,20 +12,24 @@ import {
   SwitchCamera,
   X,
 } from 'lucide-vue-next';
-import { onUnmounted, ref } from 'vue';
-import { useRouter } from 'vue-router';
-import { uid } from '../../shared/format.ts';
-import type { OcrResult } from '../../shared/types.ts';
+import { computed, nextTick, onUnmounted, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import Button from '../components/ui/Button.vue';
 import { useApp } from '../composables/useApp';
-import { cropImageToCanvas, forceNormalizeQtyPrice, preprocessImage, runOcr } from '../lib/ocr.ts';
+import { cropImageToCanvas, preprocessImage, runOcr } from '../lib/ocr.ts';
+import { applyOcrToReview } from '../lib/scanFlow.ts';
 
 type Phase = 'choose' | 'camera' | 'preview' | 'crop' | 'processing';
 
-const { tr, state, updateBill, setCurrentBill, createEmptyBill, toast } = useApp();
+const { tr, state, setCurrentBill, createEmptyBill, toast } = useApp();
 const router = useRouter();
+const route = useRoute();
 
 if (!state.currentBill) setCurrentBill(createEmptyBill());
+
+// Aksi cepat dari BillPage ("kamera" tanpa lewat halaman scan penuh) — buka kamera
+// langsung, lompati layar 'choose', dan lompati preview/crop setelah jepret.
+const quickCamera = computed(() => route.query.intent === 'camera');
 
 const phase = ref<Phase>('choose');
 const imageSrc = ref<string | null>(null);
@@ -57,6 +61,13 @@ async function startCamera() {
       audio: false,
     });
     streamRef.value = stream;
+    // phase harus diset SEBELUM mengakses videoRef — elemen <video> baru muncul di DOM
+    // setelah phase === 'camera' (v-else-if di template), jadi videoRef.value masih null
+    // di sini pada percobaan pertama. Set phase dulu, tunggu Vue mount elemennya (nextTick),
+    // baru sambungkan srcObject. Tanpa ini kamera tampil hitam sampai dipicu render ulang
+    // lain (mis. tombol swap kamera, yang kebetulan videoRef-nya sudah ada).
+    phase.value = 'camera';
+    await nextTick();
     if (videoRef.value) {
       videoRef.value.srcObject = stream;
       await videoRef.value.play();
@@ -66,7 +77,6 @@ async function startCamera() {
     if (caps?.torch && flashOn.value) {
       await track.applyConstraints({ advanced: [{ torch: true } as MediaTrackConstraintSet] });
     }
-    phase.value = 'camera';
   } catch {
     toast(tr('cameraError'), 'error');
     phase.value = 'choose';
@@ -74,6 +84,8 @@ async function startCamera() {
 }
 
 onUnmounted(() => stopCamera());
+
+if (quickCamera.value) startCamera();
 
 function capturePhoto() {
   const video = videoRef.value;
@@ -84,6 +96,11 @@ function capturePhoto() {
   canvas.getContext('2d')!.drawImage(video, 0, 0);
   imageSrc.value = canvas.toDataURL('image/jpeg', 0.92);
   stopCamera();
+  // Aksi cepat dari BillPage: lompati preview/crop, langsung scan.
+  if (quickCamera.value) {
+    runScan(imageSrc.value);
+    return;
+  }
   phase.value = 'preview';
 }
 
@@ -105,43 +122,6 @@ function loadHtmlImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
-function applyOcrToReview(result: OcrResult, receiptDataUrl: string) {
-  updateBill({
-    storeName: result.storeName || state.currentBill?.storeName,
-    date: result.date || state.currentBill?.date,
-    receiptImage: receiptDataUrl,
-    tax: result.tax || 0,
-    taxIsPercent: false,
-    serviceCharge: result.serviceCharge || 0,
-    serviceChargeIsPercent: false,
-    discount: result.discount || 0,
-    discountIsPercent: false,
-    extraFees: result.extraFees || 0,
-    totalOverride: result.total || undefined,
-  });
-
-  const reviewItems = result.items.map((it) => {
-    const n = forceNormalizeQtyPrice(it);
-    return { id: uid(), name: n.name, price: n.price, qty: n.qty };
-  });
-  sessionStorage.setItem(
-    'ocr_review',
-    JSON.stringify({
-      items: reviewItems,
-      tax: result.tax || 0,
-      serviceCharge: result.serviceCharge || 0,
-      discount: result.discount || 0,
-      extraFees: result.extraFees || 0,
-      subtotal: result.subtotal || 0,
-      total: result.total || 0,
-      storeName: result.storeName,
-      date: result.date,
-      rawText: result.rawText,
-    }),
-  );
-  router.push('/review');
-}
-
 async function runScan(src: string) {
   phase.value = 'processing';
   progress.value = 0;
@@ -155,7 +135,7 @@ async function runScan(src: string) {
       if (status === 'parsing') statusKey.value = 'parsing';
       if (status === 'done') statusKey.value = 'almostDone';
     });
-    applyOcrToReview(result, processed.toDataURL('image/jpeg', 0.85));
+    applyOcrToReview(result, processed.toDataURL('image/jpeg', 0.85), router);
   } catch (e) {
     console.error(e);
     toast(tr('ocrFailed'), 'error');
@@ -189,7 +169,7 @@ async function runCroppedScan() {
       if (status === 'recognizing') statusKey.value = 'readingText';
       if (status === 'parsing') statusKey.value = 'parsing';
     });
-    applyOcrToReview(result, processed.toDataURL('image/jpeg', 0.85));
+    applyOcrToReview(result, processed.toDataURL('image/jpeg', 0.85), router);
   } catch (e) {
     console.error(e);
     toast(tr('ocrFailed'), 'error');
@@ -261,6 +241,12 @@ function onBack() {
     return;
   }
   if (phase.value === 'camera') {
+    // Aksi cepat: tidak pernah lewat layar 'choose', jadi batal di sini balik ke BillPage
+    // langsung, bukan mendarat di layar choose yang tidak pernah dia lihat.
+    if (quickCamera.value) {
+      router.push('/bill');
+      return;
+    }
     phase.value = 'choose';
     return;
   }
@@ -382,10 +368,7 @@ function toggleCameraFacing() {
         type="button"
         class="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-black/40 text-white"
         :aria-label="tr('close')"
-        @click="
-          stopCamera();
-          phase = 'choose';
-        "
+        @click="onBack"
       >
         <X class="h-4 w-4" />
       </button>
@@ -433,7 +416,7 @@ function toggleCameraFacing() {
         </div>
       </div>
 
-      <div class="scroll-x-soft flex gap-2 pb-0.5">
+      <div class="scroll-x-soft flex justify-center gap-2 pb-0.5">
         <Button variant="outline" size="sm" class="shrink-0" @click="rotation = (rotation + 90) % 360">
           <RotateCw class="h-4 w-4" />
           {{ tr('rotate') }}
