@@ -6,6 +6,7 @@ import {
   Copy,
   CreditCard,
   ImagePlus,
+  Loader2,
   MoreHorizontal,
   Pencil,
   Plus,
@@ -20,7 +21,7 @@ import { computed, reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { calculateBill } from '../../shared/calculate.ts';
 import { formatCurrency, uid } from '../../shared/format.ts';
-import type { BillItem, Participant } from '../../shared/types.ts';
+import type { Bill, BillItem, Participant } from '../../shared/types.ts';
 import FeeField from '../components/FeeField.vue';
 import ParticipantChips from '../components/ParticipantChips.vue';
 import Button from '../components/ui/Button.vue';
@@ -32,6 +33,9 @@ import NumberInput from '../components/ui/NumberInput.vue';
 import Textarea from '../components/ui/Textarea.vue';
 import Toggle from '../components/ui/Toggle.vue';
 import { useApp } from '../composables/useApp';
+import { preprocessImage, runOcr } from '../lib/ocr.ts';
+import { applyOcrToReview } from '../lib/scanFlow.ts';
+import { saveDraft } from '../lib/storage.ts';
 
 type Tab = 'people' | 'items' | 'fees' | 'settings';
 
@@ -50,6 +54,7 @@ const editPerson = ref<Participant | null>(null);
 const personName = ref('');
 const leaveOpen = ref(false);
 const unassignedOpen = ref(false);
+const scanningInline = ref(false);
 
 const bill = computed(() => state.currentBill!);
 const calc = computed(() => (state.currentBill ? calculateBill(state.currentBill) : null));
@@ -222,6 +227,27 @@ async function goToResults() {
   router.push('/results');
 }
 
+// Bill kosong = pengguna belum menulis apa pun sejak "Buat Bill Baru" — jangan disimpan
+// ke riwayat sama sekali kalau dia langsung kembali tanpa mengisi.
+function isBillEmpty(b: Bill): boolean {
+  return (
+    !b.eventName.trim() &&
+    !b.notes.trim() &&
+    b.participants.length === 0 &&
+    b.items.length === 0 &&
+    !b.receiptImage
+  );
+}
+
+function handleBack() {
+  if (isBillEmpty(bill.value)) {
+    saveDraft(null);
+    router.push('/');
+    return;
+  }
+  leaveOpen.value = true;
+}
+
 async function leaveBillConfirmed() {
   await persistBill();
   leaveOpen.value = false;
@@ -240,13 +266,30 @@ function handleCalculate() {
   goToResults();
 }
 
+async function runQuickScan(src: string) {
+  scanningInline.value = true;
+  try {
+    const processed = await preprocessImage(src, { rotate: 0 });
+    const result = await runOcr(processed);
+    applyOcrToReview(result, processed.toDataURL('image/jpeg', 0.85), router);
+  } catch (e) {
+    console.error(e);
+    toast(tr('ocrFailed'), 'error');
+  } finally {
+    scanningInline.value = false;
+  }
+}
+
+// Aksi cepat "Dari Galeri": pilih foto lalu langsung scan — tanpa mampir ke layar
+// pilih-sumber ScanPage yang tadinya diulang percuma (bug: dua kali pilih sumber).
 function onGalleryFile(e: Event) {
-  const file = (e.target as HTMLInputElement).files?.[0];
+  const input = e.target as HTMLInputElement;
+  const file = input.files?.[0];
+  input.value = ''; // supaya file yang sama bisa dipilih ulang lain kali
   if (!file) return;
   const reader = new FileReader();
   reader.onload = () => {
-    updateBill({ receiptImage: reader.result as string });
-    router.push('/scan');
+    runQuickScan(reader.result as string);
   };
   reader.readAsDataURL(file);
 }
@@ -259,7 +302,7 @@ function onGalleryFile(e: Event) {
         type="button"
         class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-neutral-200 bg-white dark:border-neutral-700 dark:bg-neutral-900"
         :aria-label="tr('back')"
-        @click="leaveOpen = true"
+        @click="handleBack"
       >
         <ArrowLeft class="h-3.5 w-3.5" />
       </button>
@@ -279,14 +322,26 @@ function onGalleryFile(e: Event) {
         <span class="hidden min-[380px]:inline">{{ tr('scanReceipt') }}</span>
         <span class="min-[380px]:hidden">Scan</span>
       </button>
-      <label class="inline-flex shrink-0">
-        <input type="file" accept="image/*" class="hidden" @change="onGalleryFile" />
+      <label class="inline-flex shrink-0" :class="{ 'pointer-events-none opacity-60': scanningInline }">
+        <input
+          type="file"
+          accept="image/*"
+          class="hidden"
+          :disabled="scanningInline"
+          @change="onGalleryFile"
+        />
         <span class="action-chip cursor-pointer">
-          <ImagePlus class="h-3.5 w-3.5 shrink-0" />
+          <Loader2 v-if="scanningInline" class="h-3.5 w-3.5 shrink-0 animate-spin" />
+          <ImagePlus v-else class="h-3.5 w-3.5 shrink-0" />
           <span class="hidden min-[380px]:inline">{{ tr('fromGallery') }}</span>
         </span>
       </label>
-      <button type="button" class="action-chip" @click="router.push('/scan')">
+      <button
+        type="button"
+        class="action-chip"
+        :disabled="scanningInline"
+        @click="router.push('/scan?intent=camera')"
+      >
         <Camera class="h-3.5 w-3.5 shrink-0" />
         <span class="hidden sm:inline">{{ tr('useCamera') }}</span>
       </button>
