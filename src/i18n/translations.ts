@@ -212,7 +212,8 @@ const id = {
   loading: 'Memuat...',
   error: 'Terjadi kesalahan',
   tryAgain: 'Coba lagi',
-  ocrFailed: 'Gagal membaca struk. Coba foto ulang dengan pencahayaan lebih baik.',
+  ocrFailed:
+    'Gagal memindai struk. Coba lagi — kalau terus gagal, coba foto ulang atau pakai perangkat lain.',
   ocrNoItems: 'Tidak ada item terdeteksi. Tambahkan manual.',
   cameraPermission: 'Izin kamera diperlukan',
   cameraError: 'Tidak dapat mengakses kamera',
@@ -546,7 +547,8 @@ const en: typeof id = {
   loading: 'Loading...',
   error: 'Something went wrong',
   tryAgain: 'Try again',
-  ocrFailed: 'Failed to read receipt. Try again with better lighting.',
+  ocrFailed:
+    'Failed to scan receipt. Try again — if it keeps failing, retake the photo or try another device.',
   ocrNoItems: 'No items detected. Add them manually.',
   cameraPermission: 'Camera permission required',
   cameraError: 'Cannot access camera',
