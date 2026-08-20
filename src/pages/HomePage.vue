@@ -7,7 +7,6 @@ import {
   ScanLine,
   Share2,
   Shield,
-  Sparkles,
   Trash2,
   Users,
 } from 'lucide-vue-next';
@@ -93,12 +92,6 @@ function confirmClearAll() {
   <div class="page-root page-fit-desktop flex flex-col gap-5 sm:gap-6 lg:gap-7">
     <section class="pt-1 lg:grid lg:flex-1 lg:grid-cols-2 lg:items-center lg:gap-10">
       <div class="flex flex-col gap-3 sm:gap-4">
-        <div
-          class="inline-flex w-fit max-w-full items-center gap-1.5 rounded-full border border-neutral-200 bg-white px-2.5 py-1 text-[11px] font-medium text-neutral-600 sm:px-3 sm:text-xs dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300"
-        >
-          <Sparkles class="h-3.5 w-3.5 shrink-0" />
-          <span class="truncate">{{ tr('noLogin') }} · {{ tr('noInstall') }}</span>
-        </div>
         <h1
           class="text-2xl font-semibold leading-tight tracking-tight text-neutral-900 sm:text-3xl md:text-4xl lg:text-[2.5rem] dark:text-white"
         >
