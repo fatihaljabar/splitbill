@@ -3,7 +3,7 @@ import type { Lang } from '../../shared/types.ts';
 const id = {
   appName: 'SplitBills',
   tagline: 'Bagi tagihan dengan mudah, cepat, dan adil',
-  pageTitle: 'SplitBills — Bagi Tagihan & Split Bill Online Gratis',
+  pageTitle: 'SplitBills • Bagi Tagihan & Split Bill Online Gratis',
   createBill: 'Buat Bill Baru',
   scanReceipt: 'Scan Struk',
   howItWorks: 'Cara Kerja',
@@ -338,7 +338,7 @@ const id = {
 const en: typeof id = {
   appName: 'SplitBills',
   tagline: 'Split bills easily, quickly, and fairly',
-  pageTitle: 'SplitBills — Free Bill Splitting & Receipt Scanner',
+  pageTitle: 'SplitBills • Free Bill Splitting & Receipt Scanner',
   createBill: 'Create New Bill',
   scanReceipt: 'Scan Receipt',
   howItWorks: 'How It Works',
