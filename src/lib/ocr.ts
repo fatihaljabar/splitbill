@@ -437,8 +437,14 @@ function extractStoreName(lines: string[], itemStart: number): string {
         return next;
       }
     }
-    // "Domino's Pizza - Dinoyo »"
-    if (/[»>]\s*$/.test(line) || /\s[-–—]\s/.test(line)) {
+    // "Domino's Pizza - Dinoyo »" — but a dash also shows up in item names like
+    // "French Fries - Smoked Paprika", so a priced/qty-marked line is an item, never
+    // a merchant name; skip those before this pattern can mistake one for the other.
+    if (
+      (/[»>]\s*$/.test(line) || /\s[-–—]\s/.test(line)) &&
+      !hasStrongPrice(line) &&
+      !/\d{1,3}\s*x\b/i.test(line)
+    ) {
       const cleaned = cleanName(line.replace(/[»>]+$/g, '').replace(/\(.*$/, '').trim());
       if (
         cleaned.length >= 4 &&
@@ -491,6 +497,16 @@ function extractStoreName(lines: string[], itemStart: number): string {
     }
     // skip pure clock / status chrome "20.01 D X"
     if (/^\d{1,2}[.:]\d{2}\b/.test(line) && line.length < 40) continue;
+    // skip phone status bar chrome caught by OCR on app screenshots: carrier name
+    // ("TSEL", "Indosat", "al TSEL TF 00.13"), network type, battery %, wifi icon
+    // text. A real store name is never a mobile carrier's own name.
+    if (
+      /\b(telkomsel|tsel|indosat|smartfren|by\.?u)\b/i.test(line) ||
+      /\bxl\b.{0,10}\b(2g|3g|4g|5g|lte)\b/i.test(line) ||
+      (/\b(4g|5g|lte|wifi|wi-fi)\b/i.test(line) && line.length < 20)
+    ) {
+      continue;
+    }
     // skip full street address lines
     if (/\b(jl\.?|jln\.?|jalan)\b/i.test(line)) continue;
     if (isPhoneLike(line)) continue;
@@ -893,6 +909,21 @@ function parseItemLines(sectionLines: string[], allLines: string[]): ParsedItem[
       .replace(/^.*?\b(?:ringkasan\s*pesanan|rincian\s*pesanan|rincian\s*transaksi)\b\s*/i, '')
       .replace(/\bpesan\s*ini\s*lagi\b\s*/gi, '')
       .trim();
+
+    // Wrapped item-name continuation: some receipts wrap a long item name onto a
+    // second line that sits next to a struck-through original price (e.g.
+    // "1x 20RB'an 3 Pcs Nashville Chicken  Rp27.900" / "Wings + Rice  Rp40.000" is
+    // really ONE item, not two). A qty-less line whose own text carries no digit
+    // qty marker at all, immediately after a line that already had one and a price,
+    // is far more likely to be that spillover than a genuine second item — real
+    // qty-less item lists (e.g. Grab's bare "Name  Price" format) don't have a
+    // qty-marked line right before them. Drop it rather than mint a phantom item.
+    if (i > 0 && !/\d{1,3}\s*x\b/i.test(line) && !isQtyOnlyLine(line)) {
+      const prevLine = sectionLines[i - 1];
+      if (/\d{1,3}\s*x\s+\S/i.test(prevLine) && hasStrongPrice(prevLine)) {
+        continue;
+      }
+    }
 
     // Pattern GoFood: "1 PaNas 2 Spicy..., Large   @Rp64.500   Rp64.500"
     //                  "1 1 pc Krispy Chicken McD  @Rp25.000   Rp25.000"
