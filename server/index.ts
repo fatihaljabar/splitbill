@@ -35,14 +35,14 @@ let indexHtml: string;
  * TANPA nominal atau nama peserta — konsisten dengan TSD §7. */
 app.get('/s/:code/:pid?', async (c) => {
   const code = c.req.param('code');
-  let title = 'SplitBills — Bagi Tagihan Mudah';
+  let title = 'SplitBills • Bagi Tagihan Mudah';
   let description =
     'Bagi tagihan dengan mudah, cepat, dan adil. Scan struk, hitung split, bagikan link.';
 
   const result = await findActiveBill(code);
   if (result.ok) {
     const eventName = result.bill.eventName || 'Split Bill';
-    title = `${eventName} — SplitBills`;
+    title = `${eventName} • SplitBills`;
     if (result.bill.privacyMode === 'public') {
       const calc = calculateBill(result.bill);
       description = `Total ${formatCurrency(calc.grandTotal)} · ${result.bill.participants.length} orang. Buka untuk lihat rincian dan bayar.`;
