@@ -6,6 +6,11 @@ const dest = 'public/tesseract';
 await mkdir(dest, { recursive: true });
 
 await cp('node_modules/tesseract.js/dist/worker.min.js', `${dest}/worker.min.js`);
+// worker.min.js ends with `//# sourceMappingURL=worker.min.js.map` — without the map
+// itself present, the browser's devtools request 404s into the SPA catch-all (HTML
+// instead of JSON) and logs a console warning. Harmless either way, but the file is
+// cheap to ship and keeps devtools usable if OCR issues ever need debugging in prod.
+await cp('node_modules/tesseract.js/dist/worker.min.js.map', `${dest}/worker.min.js.map`);
 
 // runOcr() always calls createWorker with oem=1 (LSTM_ONLY), so the worker only ever
 // fetches these three *-lstm.wasm.js bundles (self-contained, wasm inlined as base64)
